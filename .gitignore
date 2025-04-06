@@ -135,7 +135,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-.pbvenv
+pbvenv/
 
 # Spyder project settings
 .spyderproject
@@ -173,4 +173,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-Paint Booth Data Logging.xlsx
+Paint Booth Data Logging.xlsx/

@@ -1,6 +1,7 @@
 from django.db import models
 
 class OEEDashboardData(models.Model):
+    id = models.AutoField(primary_key=True)
     # Auto-generated
     date = models.DateField(auto_now_add=True)
     time = models.TimeField(auto_now_add=True)

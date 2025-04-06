@@ -4,7 +4,7 @@ from .models import OEEDashboardData
 @admin.register(OEEDashboardData)
 class OEEDashboardAdmin(admin.ModelAdmin):
     list_display = [
-        'date', 'time', 'shift',
+        'id','date', 'time', 'shift',
         'part_number', 'cycle_time', 'plan_production_qty',
         'rejection_qty', 'ok_production', 'total_production',
         'shift_down_time', 'cycle_off_time', 'cycle_on_time',
