@@ -17,6 +17,8 @@ def get_int(value):
         return 0
 
 def dashboard_form_view(request):
+    last_part = request.session.get('last_part_number', '')
+
     if request.method == "POST":
         data = request.POST
         now = timezone.now()
@@ -71,14 +73,21 @@ def dashboard_form_view(request):
                     cooling_temp_2=0,
                 )
 
+            # Store the last entered part in session
+            request.session['last_part_number'] = part_number
+
             return redirect("booth:oee_form")
 
         except Exception as e:
             print(f"Error saving form data: {e}")
-            return render(request, "booth/oee_form.html", {"error": "Invalid input or server error."})
+            return render(request, "booth/oee_form.html", {
+                "error": "Invalid input or server error.",
+                "last_part_number": last_part
+            })
 
-    return render(request, "booth/oee_form.html")
-
+    return render(request, "booth/oee_form.html", {
+        "last_part_number": last_part
+    })
 
 def fetch_torque_data(request):
     recent_records = OEEDashboardData.objects.order_by("-date", "-time")[:50]
@@ -198,3 +207,15 @@ def manual_entry_view(request):
         return redirect("booth:oee_form")
 
     return render(request, "booth/oee_form.html")
+
+from .plc_oee import handle_recipe_change_with_input
+@csrf_exempt
+def recipe_input_view(request):
+    if request.method == 'POST':
+        part_number = request.POST.get('part_number', '').strip()
+
+        if part_number:
+            handle_recipe_change_with_input(part_number)
+            request.session['last_part_number'] = part_number  # Store last input
+
+        return redirect(request.META.get('HTTP_REFERER', '/'))

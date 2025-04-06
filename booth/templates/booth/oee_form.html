@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <script src="{% static 'jquery-3.6.0.min.js' %}"></script>
     <style>
-        /* [Your existing CSS remains unchanged here] */
+        
     </style>
 </head>
 <body>
@@ -16,10 +16,21 @@
     </header>
 
     <div class="content">
-        <!-- Add Record Button -->
-        <button id="show-form-btn" class="form-button" style="margin-bottom: 10px;">➕ Add/Edit Record</button>
+        <!-- ➕ Add/Edit Record Button -->
+        
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+            <button id="show-form-btn" class="form-button" style="margin-bottom: 10px;">➕ Add/Edit Record</button>  
+            <form method="post" action="{% url 'booth:input_recipe' %}" class="recipe-form" style="display: flex; align-items: center; gap: 8px;">
+                {% csrf_token %}
+                <input type="text" name="part_number" placeholder="Part No." class="recipe-input" required />
+                <button type="submit" class="recipe-button">Add Part</button>
+            </form>
+            {% if last_part_number %}
+                <span style="font-size: 15px; color: green;margin-top: -8px;">Last: <strong>{{ last_part_number }}</strong></span>
+            {% endif %}
+        </div>           
 
-        <!-- Manual Entry Form -->
+        <!-- Manual Entry Form (Toggle Section) -->
         <div class="section" id="manual-entry-section" style="display: none;">
             <h2>Manual Part Entry</h2>
             <form id="manual-entry-form" method="post" action="{% url 'booth:manual_entry' %}">

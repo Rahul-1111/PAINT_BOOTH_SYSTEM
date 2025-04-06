@@ -85,10 +85,11 @@ h1, h2 {
 }
 
 .form-button {
+    margin-top: -8px;
     background-color: #007BFF;
     color: white;
     border: none;
-    padding: 6px 10px;
+    padding: 7px 10px;
     border-radius: 4px;
     font-size: 13px;
     cursor: pointer;
@@ -169,4 +170,34 @@ tr:nth-child(even) {
 
 .table-scroll-container::-webkit-scrollbar-track {
     background: #e9ecef;
+}
+
+.recipe-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.recipe-input {
+    height: 20px;
+    padding: 4px 18px;
+    font-size: 14px;
+    width: 180px;
+    border: 2px solid #007BFF;
+    border-radius: 4px;
+}
+
+.recipe-button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.recipe-button:hover {
+    background-color: #0056b3;
 }
