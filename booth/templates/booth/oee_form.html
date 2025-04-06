@@ -1,0 +1,291 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MONITOR</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script src="{% static 'jquery-3.6.0.min.js' %}"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        html, body {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+    
+        header, footer {
+            background-color: #007BFF;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 14px;
+        }
+
+        footer {
+            padding: 2px 0; /* Reduced height */
+            font-size: 13px; /* Smaller text */
+        }
+    
+        .content {
+            padding: 12px;
+            flex: 10;
+        }
+    
+        h1, h2 {
+            margin: 5px 0;
+            font-size: 18px;
+        }
+    
+        .section {
+            background-color: white;
+            border: 2px solid #007BFF;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+        }
+    
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+    
+        .form-row input,
+        .form-row select {
+            flex: 0 0 auto;
+            width: auto;
+            padding: 6px 13px;
+            border: 2px solid #007BFF;
+            border-radius: 4px;
+            font-size: 13px;
+            min-width: 110px;
+        }
+    
+        .form-button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+    
+        .form-button:hover {
+            background-color: #0056b3;
+        }
+    
+        .table-scroll-container {
+            overflow-x: auto;
+        }
+    
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+    
+        th, td {
+            border: 1px solid #ccc;
+            padding: 2px 8px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        td {
+            font-size: 14px;
+        }
+    
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+    
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    
+        .plc-status {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            background-color: #e9ecef;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+        }
+    
+        .database-btn {
+            position: fixed;
+            top: 14px;
+            left: 10px;
+            background-color: #007BFF;
+            color: white;
+            padding: 8px 10px;
+            border-radius: 50%;
+            font-size: 14px;
+            text-decoration: none;
+        }
+    
+        .database-btn:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+    
+        .table-scroll-container::-webkit-scrollbar {
+            height: 6px;
+        }
+    
+        .table-scroll-container::-webkit-scrollbar-thumb {
+            background: #007BFF;
+            border-radius: 4px;
+        }
+    
+        .table-scroll-container::-webkit-scrollbar-track {
+            background: #e9ecef;
+        }
+        
+    </style>
+    
+</head>
+<body>
+    <header>
+        <h1>MONITORING DASHBOARD</h1>
+    </header>
+
+    <div class="content">
+        <!-- Manual Entry Form -->
+        <div class="section">
+            <h2>Manual Part Entry</h2>
+            <form id="manual-entry-form" method="post" action="">
+                {% csrf_token %}
+                <div class="form-row">
+                    <input type="text" name="part_number" placeholder="Part No." required>
+                    <input type="number" name="cycle_time" placeholder="Cycle Time (s)" step="0.01" required>
+                    <input type="number" name="planned_qty" placeholder="Planned Qty" required>
+                    <input type="number" name="rejection_qty" placeholder="Rejection Qty" required>
+                    <select name="remarks_off_time" required>
+                        <option value="">-- Remarks --</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Material Shortage">Material Shortage</option>
+                        <option value="Power Failure">Power Failure</option>
+                        <option value="Lunch Break">Lunch Break</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="text" name="dft" placeholder="DFT" required>
+                    <input type="text" name="viscosity" placeholder="Viscosity" required>
+                    <input type="text" name="resistivity" placeholder="Resistivity" required>
+                    <button type="submit" class="form-button">Submit</button>
+                </div>
+            </form>            
+        </div>
+
+        <!-- OEE Records Table with Scroll -->
+        <div class="section">
+            <h2>Records</h2>
+            <div class="table-scroll-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>DATE</th>
+                            <th>TIME</th>
+                            <th>SHIFT</th>
+                            <th>PART NUMBER</th>
+                            <th>CYCLE TIME</th>
+                            <th>PLANNED QTY</th>
+                            <th>OK QTY</th>
+                            <th>REJECTION QTY</th>
+                            <th>TOTAL QTY</th>
+                            <th>SHIFT DOWN TIME</th>
+                            <th>CYCLE OFF TIME</th>
+                            <th>CYCLE ON TIME</th>
+                            <th>REMARKS</th>
+                            <th>DFT</th>
+                            <th>VISCOSITY</th>
+                            <th>RESISTIVITY</th>
+                            <th>CONV TEMP 1</th>
+                            <th>CONV TEMP 2</th>
+                            <th>CONV TEMP 3</th>
+                            <th>COOL TEMP 1</th>
+                            <th>COOL TEMP 2</th>
+                        </tr>
+                    </thead>
+                    <tbody id="torque-table-body">
+                        <!-- Dynamic Data -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 PAINT BOOTH SYSTEM</p>
+    </footer>
+
+    <script>
+        function fetchTableData() {
+            $.ajax({
+                url: "{% url 'booth:fetch_torque_data' %}",
+                method: "GET",
+                success: function(response) {
+                    const tableBody = $("#torque-table-body");
+                    tableBody.empty();
+
+                    response.data.forEach(row => {
+                        const tableRow = `
+                            <tr>
+                                <td>${row.date ?? ''}</td>
+                                <td>${row.time ?? ''}</td>
+                                <td>${row.shift ?? ''}</td>
+                                <td>${row.part_number ?? ''}</td>
+                                <td>${row.cycle_time ?? ''}</td>
+                                <td>${row.plan_production_qty ?? ''}</td>
+                                <td>${row.ok_production ?? ''}</td>
+                                <td>${row.rejection_qty ?? ''}</td>
+                                <td>${row.total_production ?? ''}</td>
+                                <td>${row.shift_down_time ?? ''}</td>
+                                <td>${row.cycle_off_time ?? ''}</td>
+                                <td>${row.cycle_on_time ?? ''}</td>
+                                <td>${row.remarks_off_time ?? ''}</td>
+                                <td>${row.dft ?? ''}</td>
+                                <td>${row.viscosity ?? ''}</td>
+                                <td>${row.resistivity ?? ''}</td>
+                                <td>${row.convection_temp_1 ?? ''}</td>
+                                <td>${row.convection_temp_2 ?? ''}</td>
+                                <td>${row.convection_temp_3 ?? ''}</td>
+                                <td>${row.cooling_temp_1 ?? ''}</td>
+                                <td>${row.cooling_temp_2 ?? ''}</td>
+                            </tr>
+                        `;
+                        tableBody.append(tableRow);
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error loading OEE data:", error);
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            fetchTableData();
+            setInterval(fetchTableData, 3000);
+        });
+    </script>
+</body>
+</html>
