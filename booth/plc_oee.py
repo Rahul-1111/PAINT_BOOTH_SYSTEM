@@ -7,8 +7,33 @@ import asyncio
 
 plc_ip = "192.168.3.10"
 plc_port = 5000
-
 plc = pymcprotocol.Type3E()
+
+last_entered_part_number = None  # 🔁 Store last entered part (in Python only)
+
+# ✅ Called from view or API when user enters new part
+def handle_recipe_change_with_input(part_number):
+    global last_entered_part_number
+    last_entered_part_number = part_number
+    print(f"✅ Part number updated by user: {part_number}")
+
+    try:
+        # Send signal to PLC that new recipe entered (only when user inputs)
+        plc.batchwrite_wordunits('D5100', [1])
+        time.sleep(0.5)
+        plc.batchwrite_wordunits('D5100', [0])
+        print("📤 Recipe change signal sent to PLC")
+    except Exception as e:
+        print(f"[PLC Write Error - Recipe Signal] {e}")
+
+def connect_plc():
+    global plc
+    try:
+        plc = pymcprotocol.Type3E()
+        plc.connect(plc_ip, plc_port)
+        print("✅ PLC Connected")
+    except Exception as e:
+        print(f"[PLC Connection Error] {e}")
 
 async def toggle_heartbeat():
     heartbeat = 0
@@ -19,74 +44,71 @@ async def toggle_heartbeat():
             await asyncio.sleep(0.5)
         except Exception as e:
             print(f"[Heartbeat Error] {e}")
-            await asyncio.sleep(2)
+            await asyncio.sleep(3)
+            connect_plc()
 
-def read_oee_and_store():
+def monitor_signals():
+    while True:
+        try:
+            signals = plc.batchread_wordunits('D5105', 2)
+            on_signal, off_signal = signals
+
+            if on_signal == 1:
+                on_time = plc.batchread_wordunits('D5103', 1)[0]
+                store_oee_data(cycle_on_time=on_time)
+
+            if off_signal == 1:
+                off_time = plc.batchread_wordunits('D5104', 1)[0]
+                store_oee_data(cycle_off_time=off_time)
+
+            time.sleep(1)
+
+        except Exception as e:
+            print(f"[Signal Monitor Error] {e}")
+            time.sleep(3)
+            connect_plc()
+
+def store_oee_data(cycle_on_time=None, cycle_off_time=None):
+    global last_entered_part_number
     try:
-        values = plc.batchread_wordunits('D5102', 5)
-        OEEDashboardData.objects.create(
-            date=datetime.now().date(),
-            time=datetime.now().time(),
-            shift="Auto",
-            part_number="AutoFetch",
+        values = plc.batchread_wordunits('D5102', 1)  # OK production
+        temps = plc.batchread_wordunits('D5111', 5)   # Temp values
+
+        data = OEEDashboardData(
+            part_number=last_entered_part_number or " ",  # 🔁 Reuse last entered part
+            cycle_time=0.0,
+            plan_production_qty=0,
+            rejection_qty=0,
             ok_production=int(values[0]),
-            cycle_on_time=int(values[1]),
-            cycle_off_time=int(values[2])
+            cycle_on_time=cycle_on_time or 0.0,
+            cycle_off_time=cycle_off_time or 0.0,
+            convection_temp_1=temps[0],
+            convection_temp_2=temps[1],
+            convection_temp_3=temps[2],
+            cooling_temp_1=temps[3],
+            cooling_temp_2=temps[4],
+            remarks_off_time='idle',
+            dft=0.0,
+            viscosity=0.0,
+            resistivity=0.0,
         )
+        data.save()
+        print(f"📥 OEE Data Saved for Part: {data.part_number}")
+
     except Exception as e:
-        print(f"[OEE Read Error] {e}")
-
-def handle_recipe_change():
-    plc.batchwrite_wordunits('D5100', [1])
-    time.sleep(0.6)
-    plc.batchwrite_wordunits('D5100', [0])
-
-def handle_manual_fetch():
-    plc.batchwrite_wordunits('D5205', [1])
-    time.sleep(0.5)
-    read_oee_and_store()
-    plc.batchwrite_wordunits('D5205', [0])
-
-def handle_manual_fetch_2():
-    plc.batchwrite_wordunits('D5206', [1])
-    time.sleep(0.5)
-    read_oee_and_store()
-    plc.batchwrite_wordunits('D5206', [0])
+        print(f"[DB Save Error] {e}")
 
 def start_async_loop():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop.run_until_complete(toggle_heartbeat())
 
-def monitor_plc_loop():
-    global plc
-    while True:
-        try:
-            print("🔌 Trying to connect to PLC...")
-            plc = pymcprotocol.Type3E()
-            plc.connect(plc_ip, plc_port)
-            print("✅ PLC Connected.")
-
-            # Start heartbeat in a new async thread
-            threading.Thread(target=start_async_loop, daemon=True).start()
-
-            break  # Exit loop once connected and heartbeat started
-        except Exception as e:
-            print(f"[PLC Monitor Error] {e}")
-            print("🔁 Reconnecting in 5 seconds...")
-            time.sleep(5)
-            
-def handle_recipe_change_with_input(part_number: str):
-    try:
-        print(f"📦 Recipe Change Triggered → Part: {part_number}")
-        plc.batchwrite_wordunits('D5100', [1])
-        time.sleep(0.6)
-        plc.batchwrite_wordunits('D5100', [0])
-    except Exception as e:
-        print(f"[Recipe Change Error] {e}")
-
-
-
 def run():
-    print("🚀 Starting PLC monitoring thread...")
-    threading.Thread(target=monitor_plc_loop, daemon=True).start()
+    print("🚀 Starting PLC monitor...")
+    connect_plc()
+
+    # Start heartbeat
+    threading.Thread(target=start_async_loop, daemon=True).start()
+
+    # Start signal monitor
+    threading.Thread(target=monitor_signals, daemon=True).start()

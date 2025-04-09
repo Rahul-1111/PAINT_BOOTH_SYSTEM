@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.utils import timezone
-from .models import OEEDashboardData
 from django.views.decorators.csrf import csrf_exempt
+from .models import OEEDashboardData
+from .plc_oee import handle_recipe_change_with_input
 
+# Utility functions
 def get_float(value):
     try:
         return float(value or 0)
@@ -16,6 +18,7 @@ def get_int(value):
     except (ValueError, TypeError):
         return 0
 
+# Dashboard form view
 def dashboard_form_view(request):
     last_part = request.session.get('last_part_number', '')
 
@@ -23,6 +26,7 @@ def dashboard_form_view(request):
         data = request.POST
         now = timezone.now()
 
+        # Determine shift
         hour = now.hour
         if 6 <= hour < 14:
             shift = "Shift 1"
@@ -73,9 +77,7 @@ def dashboard_form_view(request):
                     cooling_temp_2=0,
                 )
 
-            # Store the last entered part in session
             request.session['last_part_number'] = part_number
-
             return redirect("booth:oee_form")
 
         except Exception as e:
@@ -89,6 +91,7 @@ def dashboard_form_view(request):
         "last_part_number": last_part
     })
 
+# Fetch last 50 records
 def fetch_torque_data(request):
     recent_records = OEEDashboardData.objects.order_by("-date", "-time")[:50]
     data = []
@@ -128,7 +131,7 @@ def fetch_torque_data(request):
 
     return JsonResponse({"data": data})
 
-
+# OEE Calculation Logic
 def calculate_oee(record):
     try:
         total_time = get_float(record.cycle_on_time) + get_float(record.cycle_off_time)
@@ -154,7 +157,7 @@ def calculate_oee(record):
             "oee": 0
         }
 
-
+# Edit record
 def edit_oee_record(request, pk):
     record = get_object_or_404(OEEDashboardData, pk=pk)
 
@@ -178,16 +181,15 @@ def edit_oee_record(request, pk):
 
     return render(request, "booth/oee_form_edit.html", {"record": record})
 
-
+# Get list of distinct part numbers
 def get_part_numbers(request):
     part_numbers = OEEDashboardData.objects.values_list('part_number', flat=True).distinct()
     return JsonResponse({'part_numbers': list(part_numbers)})
 
-
+# Manual entry update
 def manual_entry_view(request):
     if request.method == 'POST':
         part_number = request.POST.get('part_number')
-
         existing_record = OEEDashboardData.objects.filter(part_number=part_number).order_by('-id').first()
 
         if existing_record:
@@ -208,14 +210,20 @@ def manual_entry_view(request):
 
     return render(request, "booth/oee_form.html")
 
-from .plc_oee import handle_recipe_change_with_input
+# PLC recipe change trigger
 @csrf_exempt
 def recipe_input_view(request):
     if request.method == 'POST':
         part_number = request.POST.get('part_number', '').strip()
-
         if part_number:
             handle_recipe_change_with_input(part_number)
-            request.session['last_part_number'] = part_number  # Store last input
-
+            request.session['last_part_number'] = part_number
         return redirect(request.META.get('HTTP_REFERER', '/'))
+
+from booth.plc_oee import handle_recipe_change_with_input
+
+def submit_part_number(request):
+    if request.method == 'POST':
+        part_number = request.POST.get('part_number')
+        handle_recipe_change_with_input(part_number)
+        return JsonResponse({'message': 'Part number set successfully'})
