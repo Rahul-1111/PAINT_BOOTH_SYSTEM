@@ -121,8 +121,24 @@ def start_async_loop():
     asyncio.set_event_loop(loop)
     loop.run_until_complete(toggle_heartbeat())
 
+def initialize_last_part_number():
+    global last_entered_part_number
+    try:
+        last_entry = OEEDashboardData.objects.last()
+        if last_entry and last_entry.part_number:
+            last_entered_part_number = last_entry.part_number
+            print(f"🔁 Loaded last part number from DB: {last_entered_part_number}")
+        else:
+            print("⚠️ No previous part number found in database.")
+    except Exception as e:
+        print(f"[Init Error] Could not load last part number: {e}")
+
 def run():
     print("🚀 Starting PLC monitor...")
+
+    # 🔁 Load last part number from DB on startup
+    initialize_last_part_number()
+    
     connect_plc()
 
     # Start heartbeat
