@@ -54,12 +54,22 @@ def monitor_signals():
             off_signal = plc.batchread_wordunits('D5109', 1)[0]
 
             if on_signal == 1:
+                # Store data when D5108 is ON
                 on_time = plc.batchread_wordunits('D5104', 1)[0]
                 store_oee_data(cycle_on_time=on_time)
+                
+                # Reset the signal to 0 after storing data
+                plc.batchwrite_wordunits('D5108', [0])
+                print("✅ D5108 reset to 0 after storing data")
 
             if off_signal == 1:
+                # Store data when D5109 is ON
                 off_time = plc.batchread_wordunits('D5106', 1)[0]
                 store_oee_data(cycle_off_time=off_time)
+
+                # Reset the signal to 0 after storing data
+                plc.batchwrite_wordunits('D5109', [0])
+                print("✅ D5109 reset to 0 after storing data")
 
             time.sleep(1)
 

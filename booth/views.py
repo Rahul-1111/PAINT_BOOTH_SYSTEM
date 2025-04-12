@@ -4,6 +4,8 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from .models import OEEDashboardData
 from .plc_oee import handle_recipe_change_with_input
+from django.db.models import F
+from datetime import datetime
 
 # Utility functions
 def get_float(value):
@@ -53,6 +55,8 @@ def dashboard_form_view(request):
                 existing.viscosity = get_float(data.get('viscosity'))
                 existing.resistivity = get_float(data.get('resistivity'))
                 existing.time = now.time()
+                existing.cycle_on_time = get_float(data.get('cycle_on_time'))
+                existing.cycle_off_time = get_float(data.get('cycle_off_time'))
                 existing.save()
             else:
                 OEEDashboardData.objects.create(
@@ -68,8 +72,8 @@ def dashboard_form_view(request):
                     viscosity=get_float(data.get('viscosity')),
                     resistivity=get_float(data.get('resistivity')),
                     ok_production=0,
-                    cycle_on_time=0,
-                    cycle_off_time=0,
+                    cycle_on_time=get_float(data.get('cycle_on_time')),
+                    cycle_off_time=get_float(data.get('cycle_off_time')),
                     convection_temp_1=0,
                     convection_temp_2=0,
                     convection_temp_3=0,
@@ -91,46 +95,35 @@ def dashboard_form_view(request):
         "last_part_number": last_part
     })
 
-# Fetch last 50 records
 def fetch_torque_data(request):
-    recent_records = OEEDashboardData.objects.order_by("-date", "-time")[:50]
-    data = []
-
-    for record in recent_records:
-        oee = calculate_oee(record)
-        total_production = get_int(record.ok_production) + get_int(record.rejection_qty)
-
-        data.append({
-            "id": record.id,
-            "part_number": record.part_number,
-            "date": record.date.strftime("%Y-%m-%d"),
-            "time": record.time.strftime("%H:%M:%S"),
-            "shift": record.shift,
-            "load_time": record.cycle_on_time,
-            "cycle_time": record.cycle_time,
-            "stop_time": record.cycle_off_time,
-            "plan_production_qty": record.plan_production_qty,
-            "ok_production": record.ok_production,
-            "rejection_qty": record.rejection_qty,
-            "total_production": total_production,
-            "shift_down_time": record.shift_down_time,
-            "remarks_off_time": record.remarks_off_time,
-            "dft": record.dft,
-            "viscosity": record.viscosity,
-            "resistivity": record.resistivity,
-            "convection_temp_1": record.convection_temp_1,
-            "convection_temp_2": record.convection_temp_2,
-            "convection_temp_3": record.convection_temp_3,
-            "cooling_temp_1": record.cooling_temp_1,
-            "cooling_temp_2": record.cooling_temp_2,
-            "availability": oee["availability"],
-            "performance": oee["performance"],
-            "quality": oee["quality"],
-            "oee": oee["oee"],
-        })
-
-    return JsonResponse({"data": data})
-
+    data = OEEDashboardData.objects.all().order_by('-id')[:50]  # or any limit you want
+    json_data = [
+        {
+            'date': str(d.date),
+            'time': str(d.time),
+            'shift': d.shift,
+            'part_number': d.part_number,
+            'cycle_time': d.cycle_time,
+            'plan_production_qty': d.plan_production_qty,
+            'rejection_qty': d.rejection_qty,
+            'ok_production': d.ok_production,
+            'total_production': d.total_production,
+            'shift_down_time': d.shift_down_time,
+            'cycle_off_time': d.cycle_off_time,
+            'cycle_on_time': d.cycle_on_time,
+            'remarks_off_time': d.remarks_off_time,
+            'dft': d.dft,
+            'viscosity': d.viscosity,
+            'resistivity': d.resistivity,
+            'convection_temp_1': d.convection_temp_1,
+            'convection_temp_2': d.convection_temp_2,
+            'convection_temp_3': d.convection_temp_3,
+            'cooling_temp_1': d.cooling_temp_1,
+            'cooling_temp_2': d.cooling_temp_2,
+        }
+        for d in data
+    ]
+    return JsonResponse({'data': json_data})
 # OEE Calculation Logic
 def calculate_oee(record):
     try:
@@ -172,6 +165,8 @@ def edit_oee_record(request, pk):
             record.dft = get_float(data.get('dft'))
             record.viscosity = get_float(data.get('viscosity'))
             record.resistivity = get_float(data.get('resistivity'))
+            record.cycle_on_time = get_float(data.get('cycle_on_time'))
+            record.cycle_off_time = get_float(data.get('cycle_off_time'))
             record.save()
 
             return redirect("booth:oee_form")
@@ -186,10 +181,7 @@ def get_part_numbers(request):
     part_numbers = OEEDashboardData.objects.values_list('part_number', flat=True).distinct()
     return JsonResponse({'part_numbers': list(part_numbers)})
 
-from datetime import datetime
-
-from datetime import datetime
-
+# Manual Entry
 def manual_entry_view(request):
     if request.method == 'POST':
         part_number = request.POST.get('part_number')
@@ -201,7 +193,7 @@ def manual_entry_view(request):
             existing_record = OEEDashboardData.objects.filter(
                 part_number=part_number,
                 date=selected_date,
-                time__startswith=selected_time,  # Match even if microseconds exist
+                time__startswith=selected_time,
                 shift=selected_shift
             ).first()
 
@@ -216,7 +208,7 @@ def manual_entry_view(request):
                 existing_record.save()
                 print(f"✅ Updated record: {existing_record.part_number} at {existing_record.time}")
             else:
-                print(f"❌ No exact match found for part={part_number}, date={selected_date}, time={selected_time}, shift={selected_shift}")
+                print(f"❌ No match found for part={part_number}, date={selected_date}, time={selected_time}, shift={selected_shift}")
 
         except Exception as e:
             print(f"[Manual Entry Error] {e}")
@@ -235,15 +227,11 @@ def recipe_input_view(request):
             request.session['last_part_number'] = part_number
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
-from booth.plc_oee import handle_recipe_change_with_input
-
 def submit_part_number(request):
     if request.method == 'POST':
         part_number = request.POST.get('part_number')
         handle_recipe_change_with_input(part_number)
         return JsonResponse({'message': 'Part number set successfully'})
-
-from django.db.models import F
 
 # Filtered options for date, time, and shift based on part_number
 def get_filters_for_part(request):
