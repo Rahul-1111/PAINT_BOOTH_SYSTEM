@@ -5,8 +5,8 @@ from datetime import datetime
 from booth.models import OEEDashboardData
 import asyncio
 
-plc_ip = "192.168.3.10"
-plc_port = 5000
+plc_ip = "192.168.3.250"
+plc_port = 5007
 plc = pymcprotocol.Type3E()
 
 last_entered_part_number = None  # 🔁 Store last entered part (in Python only)
@@ -18,7 +18,6 @@ def handle_recipe_change_with_input(part_number):
     print(f"✅ Part number updated by user: {part_number}")
 
     try:
-        # Send signal to PLC that new recipe entered (only when user inputs)
         plc.batchwrite_wordunits('D5100', [1])
         time.sleep(0.5)
         plc.batchwrite_wordunits('D5100', [0])
@@ -50,15 +49,16 @@ async def toggle_heartbeat():
 def monitor_signals():
     while True:
         try:
-            signals = plc.batchread_wordunits('D5105', 2)
-            on_signal, off_signal = signals
+            # 🔄 Check manual triggers: D5108 = ON, D5109 = OFF
+            on_signal = plc.batchread_wordunits('D5108', 1)[0]
+            off_signal = plc.batchread_wordunits('D5109', 1)[0]
 
             if on_signal == 1:
-                on_time = plc.batchread_wordunits('D5103', 1)[0]
+                on_time = plc.batchread_wordunits('D5104', 1)[0]
                 store_oee_data(cycle_on_time=on_time)
 
             if off_signal == 1:
-                off_time = plc.batchread_wordunits('D5104', 1)[0]
+                off_time = plc.batchread_wordunits('D5106', 1)[0]
                 store_oee_data(cycle_off_time=off_time)
 
             time.sleep(1)
@@ -72,7 +72,15 @@ def store_oee_data(cycle_on_time=None, cycle_off_time=None):
     global last_entered_part_number
     try:
         values = plc.batchread_wordunits('D5102', 1)  # OK production
-        temps = plc.batchread_wordunits('D5111', 5)   # Temp values
+
+        # 🌡️ Read temperature zones
+        temps = [
+            plc.batchread_wordunits('D5112', 1)[0],  # Convection 1
+            plc.batchread_wordunits('D5114', 1)[0],  # Convection 2
+            plc.batchread_wordunits('D5116', 1)[0],  # Convection 3
+            plc.batchread_wordunits('D5118', 1)[0],  # Cooling 1
+            plc.batchread_wordunits('D5120', 1)[0],  # Cooling 2
+        ]
 
         data = OEEDashboardData(
             part_number=last_entered_part_number or " ",  # 🔁 Reuse last entered part

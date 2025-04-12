@@ -186,25 +186,40 @@ def get_part_numbers(request):
     part_numbers = OEEDashboardData.objects.values_list('part_number', flat=True).distinct()
     return JsonResponse({'part_numbers': list(part_numbers)})
 
-# Manual entry update
+from datetime import datetime
+
+from datetime import datetime
+
 def manual_entry_view(request):
     if request.method == 'POST':
         part_number = request.POST.get('part_number')
-        existing_record = OEEDashboardData.objects.filter(part_number=part_number).order_by('-id').first()
+        selected_date = request.POST.get('selected_date')
+        selected_time = request.POST.get('selected_time')  # Format: 'HH:MM:SS'
+        selected_shift = request.POST.get('selected_shift')
 
-        if existing_record:
-            existing_record.cycle_time = get_float(request.POST.get('cycle_time'))
-            existing_record.plan_production_qty = get_int(request.POST.get('planned_qty'))
-            existing_record.rejection_qty = get_int(request.POST.get('rejection_qty'))
-            existing_record.remarks_off_time = request.POST.get('remarks_off_time')
-            existing_record.dft = get_float(request.POST.get('dft'))
-            existing_record.viscosity = get_float(request.POST.get('viscosity'))
-            existing_record.resistivity = get_float(request.POST.get('resistivity'))
-            existing_record.date = timezone.now().date()
-            existing_record.time = timezone.now().time()
-            existing_record.save()
-        else:
-            print(f"No existing record for part number {part_number}")
+        try:
+            existing_record = OEEDashboardData.objects.filter(
+                part_number=part_number,
+                date=selected_date,
+                time__startswith=selected_time,  # Match even if microseconds exist
+                shift=selected_shift
+            ).first()
+
+            if existing_record:
+                existing_record.cycle_time = get_float(request.POST.get('cycle_time'))
+                existing_record.plan_production_qty = get_int(request.POST.get('planned_qty'))
+                existing_record.rejection_qty = get_int(request.POST.get('rejection_qty'))
+                existing_record.remarks_off_time = request.POST.get('remarks_off_time')
+                existing_record.dft = get_float(request.POST.get('dft'))
+                existing_record.viscosity = get_float(request.POST.get('viscosity'))
+                existing_record.resistivity = get_float(request.POST.get('resistivity'))
+                existing_record.save()
+                print(f"✅ Updated record: {existing_record.part_number} at {existing_record.time}")
+            else:
+                print(f"❌ No exact match found for part={part_number}, date={selected_date}, time={selected_time}, shift={selected_shift}")
+
+        except Exception as e:
+            print(f"[Manual Entry Error] {e}")
 
         return redirect("booth:oee_form")
 
@@ -227,3 +242,22 @@ def submit_part_number(request):
         part_number = request.POST.get('part_number')
         handle_recipe_change_with_input(part_number)
         return JsonResponse({'message': 'Part number set successfully'})
+
+from django.db.models import F
+
+# Filtered options for date, time, and shift based on part_number
+def get_filters_for_part(request):
+    part_number = request.GET.get("part_number", "").strip()
+    if part_number:
+        records = OEEDashboardData.objects.filter(part_number=part_number)
+        dates = records.values_list('date', flat=True).distinct().order_by('-date')
+        times = records.values_list('time', flat=True).distinct().order_by('-time')
+        shifts = records.values_list('shift', flat=True).distinct()
+
+        return JsonResponse({
+            "dates": [str(d) for d in dates],
+            "times": [t.strftime('%H:%M:%S') for t in times],
+            "shifts": list(shifts)
+        })
+
+    return JsonResponse({"dates": [], "times": [], "shifts": []})

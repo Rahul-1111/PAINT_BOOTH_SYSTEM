@@ -6,9 +6,6 @@
     <title>MONITOR</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <script src="{% static 'jquery-3.6.0.min.js' %}"></script>
-    <style>
-        
-    </style>
 </head>
 <body>
     <header>
@@ -16,8 +13,7 @@
     </header>
 
     <div class="content">
-        <!-- ➕ Add/Edit Record Button -->
-        
+        <!-- Add/Edit Record and Part Input -->
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
             <button id="show-form-btn" class="form-button" style="margin-bottom: 10px;">➕ Add/Edit Record</button>  
             <form method="post" action="{% url 'booth:input_recipe' %}" class="recipe-form" style="display: flex; align-items: center; gap: 8px;">
@@ -28,20 +24,33 @@
             {% if last_part_number %}
                 <span style="font-size: 15px; color: green;margin-top: -8px;">Last: <strong>{{ last_part_number }}</strong></span>
             {% endif %}
-        </div>           
+        </div>
 
-        <!-- Manual Entry Form (Toggle Section) -->
+        <!-- Manual Entry Form (Hidden Toggle) -->
         <div class="section" id="manual-entry-section" style="display: none;">
             <h2>Manual Part Entry</h2>
             <form id="manual-entry-form" method="post" action="{% url 'booth:manual_entry' %}">
                 {% csrf_token %}
-                <div class="form-row">
+                <div class="form-row" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
                     <select name="part_number" id="part-number-dropdown" required>
                         <option value="">-- Select Part Number --</option>
                     </select>
+
+                    <!-- Dynamic Date/Time/Shift Dropdowns -->
+                    <select name="selected_date" id="date-dropdown" required>
+                        <option value="">-- Date --</option>
+                    </select>
+                    <select name="selected_time" id="time-dropdown" required>
+                        <option value="">-- Time --</option>
+                    </select>
+                    <select name="selected_shift" id="shift-dropdown" required>
+                        <option value="">-- Shift --</option>
+                    </select>
+
                     <input type="number" name="cycle_time" placeholder="Cycle Time (s)" step="0.01" required>
                     <input type="number" name="planned_qty" placeholder="Planned Qty" required>
                     <input type="number" name="rejection_qty" placeholder="Rejection Qty" required>
+
                     <select name="remarks_off_time" required>
                         <option value="">-- Remarks --</option>
                         <option value="Maintenance">Maintenance</option>
@@ -50,9 +59,11 @@
                         <option value="Lunch Break">Lunch Break</option>
                         <option value="Other">Other</option>
                     </select>
+
                     <input type="text" name="dft" placeholder="DFT" required>
                     <input type="text" name="viscosity" placeholder="Viscosity" required>
                     <input type="text" name="resistivity" placeholder="Resistivity" required>
+
                     <button type="submit" class="form-button">Submit</button>
                 </div>
             </form>
@@ -90,7 +101,7 @@
                         </tr>
                     </thead>
                     <tbody id="torque-table-body">
-                        <!-- Data loads here -->
+                        <!-- Rows rendered here -->
                     </tbody>
                 </table>
             </div>
@@ -135,8 +146,7 @@
                                 <td>${row.convection_temp_3 ?? ''}</td>
                                 <td>${row.cooling_temp_1 ?? ''}</td>
                                 <td>${row.cooling_temp_2 ?? ''}</td>
-                            </tr>
-                        `;
+                            </tr>`;
                         tableBody.append(tableRow);
                     });
                 },
@@ -167,12 +177,32 @@
             fetchTableData();
             loadPartNumbers();
 
-            // Refresh table data every 3 seconds
-            setInterval(fetchTableData, 3000);
+            setInterval(fetchTableData, 3000);  // Auto-refresh
 
-            // Toggle manual entry form
             $('#show-form-btn').on('click', function () {
                 $('#manual-entry-section').slideToggle(200);
+            });
+
+            // When part number is selected, fetch date/time/shift options
+            $('#part-number-dropdown').on('change', function () {
+                const partNumber = $(this).val();
+                if (!partNumber) return;
+
+                $.get("{% url 'booth:get_filters_for_part' %}", { part_number: partNumber }, function (data) {
+                    $('#date-dropdown').empty().append('<option value="">-- Date --</option>');
+                    $('#time-dropdown').empty().append('<option value="">-- Time --</option>');
+                    $('#shift-dropdown').empty().append('<option value="">-- Shift --</option>');
+
+                    data.dates.forEach(date => {
+                        $('#date-dropdown').append(`<option value="${date}">${date}</option>`);
+                    });
+                    data.times.forEach(time => {
+                        $('#time-dropdown').append(`<option value="${time}">${time}</option>`);
+                    });
+                    data.shifts.forEach(shift => {
+                        $('#shift-dropdown').append(`<option value="${shift}">${shift}</option>`);
+                    });
+                });
             });
         });
     </script>
