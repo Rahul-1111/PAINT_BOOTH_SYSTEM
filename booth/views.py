@@ -100,7 +100,7 @@ def fetch_torque_data(request):
     json_data = [
         {
             'date': str(d.date),
-            'time': str(d.time),
+            'time': d.time.strftime('%H:%M:%S'),
             'shift': d.shift,
             'part_number': d.part_number,
             'cycle_time': d.cycle_time,
@@ -233,13 +233,27 @@ def submit_part_number(request):
         handle_recipe_change_with_input(part_number)
         return JsonResponse({'message': 'Part number set successfully'})
 
-# Filtered options for date, time, and shift based on part_number
 def get_filters_for_part(request):
     part_number = request.GET.get("part_number", "").strip()
+    selected_date = request.GET.get("selected_date", "").strip()
+
     if part_number:
         records = OEEDashboardData.objects.filter(part_number=part_number)
+
+        # Dates: Always filter by part_number
         dates = records.values_list('date', flat=True).distinct().order_by('-date')
-        times = records.values_list('time', flat=True).distinct().order_by('-time')
+
+        # Times: Filter by both part_number and selected_date (if provided)
+        if selected_date:
+            try:
+                selected_date_obj = datetime.strptime(selected_date, '%Y-%m-%d').date()
+                time_records = records.filter(date=selected_date_obj)
+            except ValueError:
+                time_records = records.none()
+        else:
+            time_records = records.none()
+
+        times = time_records.values_list('time', flat=True).distinct().order_by('-time')
         shifts = records.values_list('shift', flat=True).distinct()
 
         return JsonResponse({
@@ -249,3 +263,4 @@ def get_filters_for_part(request):
         })
 
     return JsonResponse({"dates": [], "times": [], "shifts": []})
+

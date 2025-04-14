@@ -176,33 +176,67 @@
         $(document).ready(function () {
             fetchTableData();
             loadPartNumbers();
-
-            setInterval(fetchTableData, 3000);  // Auto-refresh
+            setInterval(fetchTableData, 3000);
 
             $('#show-form-btn').on('click', function () {
                 $('#manual-entry-section').slideToggle(200);
             });
 
-            // When part number is selected, fetch date/time/shift options
             $('#part-number-dropdown').on('change', function () {
                 const partNumber = $(this).val();
-                if (!partNumber) return;
 
-                $.get("{% url 'booth:get_filters_for_part' %}", { part_number: partNumber }, function (data) {
-                    $('#date-dropdown').empty().append('<option value="">-- Date --</option>');
-                    $('#time-dropdown').empty().append('<option value="">-- Time --</option>');
-                    $('#shift-dropdown').empty().append('<option value="">-- Shift --</option>');
+                $('#date-dropdown').empty().append('<option value="">-- Date --</option>');
+                $('#time-dropdown').empty().append('<option value="">-- Time --</option>');
+                $('#shift-dropdown').empty().append('<option value="">-- Shift --</option>');
 
-                    data.dates.forEach(date => {
-                        $('#date-dropdown').append(`<option value="${date}">${date}</option>`);
+                if (partNumber) {
+                    $.get("{% url 'booth:get_filters_for_part' %}", { part_number: partNumber }, function (data) {
+                        data.dates.forEach(date => {
+                            $('#date-dropdown').append(`<option value="${date}">${date}</option>`);
+                        });
+                        data.shifts.forEach(shift => {
+                            $('#shift-dropdown').append(`<option value="${shift}">${shift}</option>`);
+                        });
                     });
-                    data.times.forEach(time => {
-                        $('#time-dropdown').append(`<option value="${time}">${time}</option>`);
+                }
+            });
+
+            $('#date-dropdown').on('change', function () {
+                const partNumber = $('#part-number-dropdown').val();
+                const selectedDate = $(this).val();
+
+                $('#time-dropdown').empty().append('<option value="">-- Time --</option>');
+
+                if (partNumber && selectedDate) {
+                    $.get("{% url 'booth:get_filters_for_part' %}", {
+                        part_number: partNumber,
+                        selected_date: selectedDate
+                    }, function (data) {
+                        data.times.forEach(time => {
+                            $('#time-dropdown').append(`<option value="${time}">${time}</option>`);
+                        });
                     });
-                    data.shifts.forEach(shift => {
-                        $('#shift-dropdown').append(`<option value="${shift}">${shift}</option>`);
+                }
+            });
+
+            $('#time-dropdown').on('change', function () {
+                const partNumber = $('#part-number-dropdown').val();
+                const selectedDate = $('#date-dropdown').val();
+                const selectedTime = $(this).val();
+
+                $('#shift-dropdown').empty().append('<option value="">-- Shift --</option>');
+
+                if (partNumber && selectedDate && selectedTime) {
+                    $.get("{% url 'booth:get_filters_for_part' %}", {
+                        part_number: partNumber,
+                        selected_date: selectedDate,
+                        selected_time: selectedTime
+                    }, function (data) {
+                        data.shifts.forEach(shift => {
+                            $('#shift-dropdown').append(`<option value="${shift}">${shift}</option>`);
+                        });
                     });
-                });
+                }
             });
         });
     </script>
