@@ -234,33 +234,32 @@ def submit_part_number(request):
         return JsonResponse({'message': 'Part number set successfully'})
 
 def get_filters_for_part(request):
-    part_number = request.GET.get("part_number", "").strip()
-    selected_date = request.GET.get("selected_date", "").strip()
+    part_number = request.GET.get('part_number')
+    selected_date = request.GET.get('selected_date')
+    selected_time = request.GET.get('selected_time')
 
-    if part_number:
-        records = OEEDashboardData.objects.filter(part_number=part_number)
+    response_data = {}
 
-        # Dates: Always filter by part_number
-        dates = records.values_list('date', flat=True).distinct().order_by('-date')
+    if part_number and not selected_date:
+        # Return unique dates
+        dates = OEEDashboardData.objects.filter(part_number=part_number).values_list('date', flat=True).distinct()
+        response_data['dates'] = sorted(list(set(str(d) for d in dates)))
 
-        # Times: Filter by both part_number and selected_date (if provided)
-        if selected_date:
-            try:
-                selected_date_obj = datetime.strptime(selected_date, '%Y-%m-%d').date()
-                time_records = records.filter(date=selected_date_obj)
-            except ValueError:
-                time_records = records.none()
-        else:
-            time_records = records.none()
+    elif part_number and selected_date and not selected_time:
+        # Return unique times for given part and date
+        times = OEEDashboardData.objects.filter(
+            part_number=part_number,
+            date=selected_date
+        ).values_list('time', flat=True).distinct()
+        response_data['times'] = sorted(list(set(str(t) for t in times)))
 
-        times = time_records.values_list('time', flat=True).distinct().order_by('-time')
-        shifts = records.values_list('shift', flat=True).distinct()
+    elif part_number and selected_date and selected_time:
+        # Return shifts for given part, date, and time
+        shifts = OEEDashboardData.objects.filter(
+            part_number=part_number,
+            date=selected_date,
+            time=selected_time
+        ).values_list('shift', flat=True).distinct()
+        response_data['shifts'] = sorted(list(set(str(s) for s in shifts)))
 
-        return JsonResponse({
-            "dates": [str(d) for d in dates],
-            "times": [t.strftime('%H:%M:%S') for t in times],
-            "shifts": list(shifts)
-        })
-
-    return JsonResponse({"dates": [], "times": [], "shifts": []})
-
+    return JsonResponse(response_data)

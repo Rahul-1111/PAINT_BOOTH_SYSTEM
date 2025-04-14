@@ -174,71 +174,113 @@
         }
 
         $(document).ready(function () {
+            // Initial data fetch and interval setup
             fetchTableData();
             loadPartNumbers();
             setInterval(fetchTableData, 3000);
-
+        
+            // Toggle manual entry form
             $('#show-form-btn').on('click', function () {
                 $('#manual-entry-section').slideToggle(200);
             });
-
+        
+            // Step 1: On Part Number change → Load Dates
             $('#part-number-dropdown').on('change', function () {
                 const partNumber = $(this).val();
-
+        
+                // Clear dependent dropdowns
                 $('#date-dropdown').empty().append('<option value="">-- Date --</option>');
                 $('#time-dropdown').empty().append('<option value="">-- Time --</option>');
                 $('#shift-dropdown').empty().append('<option value="">-- Shift --</option>');
-
+        
+                // If part number selected, fetch dates
                 if (partNumber) {
-                    $.get("{% url 'booth:get_filters_for_part' %}", { part_number: partNumber }, function (data) {
-                        data.dates.forEach(date => {
-                            $('#date-dropdown').append(`<option value="${date}">${date}</option>`);
-                        });
-                        data.shifts.forEach(shift => {
-                            $('#shift-dropdown').append(`<option value="${shift}">${shift}</option>`);
-                        });
+                    $.ajax({
+                        url: "{% url 'booth:get_filters_for_part' %}",
+                        method: "GET",
+                        data: { part_number: partNumber },
+                        success: function (data) {
+                            if (data.dates && data.dates.length) {
+                                data.dates.forEach(date => {
+                                    $('#date-dropdown').append(`<option value="${date}">${date}</option>`);
+                                });
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Error fetching dates:", error);
+                        }
                     });
                 }
             });
-
+        
+            // Step 2: On Date change → Load Times
             $('#date-dropdown').on('change', function () {
                 const partNumber = $('#part-number-dropdown').val();
                 const selectedDate = $(this).val();
 
                 $('#time-dropdown').empty().append('<option value="">-- Time --</option>');
+                $('#shift-dropdown').empty().append('<option value="">-- Shift --</option>');
 
                 if (partNumber && selectedDate) {
-                    $.get("{% url 'booth:get_filters_for_part' %}", {
-                        part_number: partNumber,
-                        selected_date: selectedDate
-                    }, function (data) {
-                        data.times.forEach(time => {
-                            $('#time-dropdown').append(`<option value="${time}">${time}</option>`);
-                        });
+                    $.ajax({
+                        url: "{% url 'booth:get_filters_for_part' %}",
+                        method: "GET",
+                        data: {
+                            part_number: partNumber,
+                            selected_date: selectedDate
+                        },
+                        success: function (data) {
+                            if (data.times && data.times.length) {
+                                data.times.forEach(time => {
+                                    // Convert time to HH:mm:ss format
+                                    let formattedTime = new Date(`1970-01-01T${time}`).toLocaleTimeString([], {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit',
+                                        hour12: false // 24-hour format
+                                    });
+                                    $('#time-dropdown').append(`<option value="${time}">${formattedTime}</option>`);
+                                });
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Error fetching times:", error);
+                        }
                     });
                 }
             });
-
+        
+            // Step 3: On Time change → Load Shifts
             $('#time-dropdown').on('change', function () {
                 const partNumber = $('#part-number-dropdown').val();
                 const selectedDate = $('#date-dropdown').val();
                 const selectedTime = $(this).val();
-
+        
                 $('#shift-dropdown').empty().append('<option value="">-- Shift --</option>');
-
+        
                 if (partNumber && selectedDate && selectedTime) {
-                    $.get("{% url 'booth:get_filters_for_part' %}", {
-                        part_number: partNumber,
-                        selected_date: selectedDate,
-                        selected_time: selectedTime
-                    }, function (data) {
-                        data.shifts.forEach(shift => {
-                            $('#shift-dropdown').append(`<option value="${shift}">${shift}</option>`);
-                        });
+                    $.ajax({
+                        url: "{% url 'booth:get_filters_for_part' %}",
+                        method: "GET",
+                        data: {
+                            part_number: partNumber,
+                            selected_date: selectedDate,
+                            selected_time: selectedTime
+                        },
+                        success: function (data) {
+                            if (data.shifts && data.shifts.length) {
+                                data.shifts.forEach(shift => {
+                                    $('#shift-dropdown').append(`<option value="${shift}">${shift}</option>`);
+                                });
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Error fetching shifts:", error);
+                        }
                     });
                 }
             });
-        });
+        });        
     </script>
 </body>
 </html>
