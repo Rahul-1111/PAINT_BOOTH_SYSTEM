@@ -30,9 +30,6 @@ class OEEDashboardData(models.Model):
     # Remarks (Dropdown/User Input)
     remarks_off_time = models.CharField(
         max_length=255,
-        choices=[
-            
-        ],
         help_text="Remarks for OFF Time"
     )
 

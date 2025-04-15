@@ -50,6 +50,10 @@
                     <select name="selected_shift" id="shift-dropdown" required>
                         <option value="">-- Shift --</option>
                     </select>
+
+                    <select id="cycle-off-time-dropdown" class="form-control">
+                        <option value="">-- Cycle Off Time --</option>
+                    </select>                    
             
                     <!-- Production Fields -->
                     <input type="number" name="cycle_time" placeholder="Cycle Time (s)" step="0.01" required>
@@ -145,7 +149,7 @@
                 success: function(response) {
                     const tableBody = $("#torque-table-body");
                     tableBody.empty();
-
+    
                     response.data.forEach((row, index) => {
                         const tableRow = `
                             <tr>
@@ -168,7 +172,6 @@
                                 <td>${row.convection_temp_3 ?? ''}</td>
                                 <td>${row.cooling_temp_1 ?? ''}</td>
                                 <td>${row.cooling_temp_2 ?? ''}</td>
-                                <!-- New fields -->
                                 <td>${row.paint_batch_no ?? ''}</td>
                                 <td>${row.thinner_batch_no ?? ''}</td>
                                 <td>${row.raw_paint_viscosity ?? ''}</td>
@@ -188,7 +191,7 @@
                 }
             });
         }
-
+    
         function loadPartNumbers() {
             $.ajax({
                 url: "{% url 'booth:get_part_numbers' %}",
@@ -205,28 +208,24 @@
                 }
             });
         }
-
+    
         $(document).ready(function () {
-            // Initial data fetch and interval setup
             fetchTableData();
             loadPartNumbers();
             setInterval(fetchTableData, 3000);
-        
-            // Toggle manual entry form
+    
             $('#show-form-btn').on('click', function () {
                 $('#manual-entry-section').slideToggle(200);
             });
-        
-            // Step 1: On Part Number change → Load Dates
+    
+            // Step 1: Part Number → Dates
             $('#part-number-dropdown').on('change', function () {
                 const partNumber = $(this).val();
-        
-                // Clear dependent dropdowns
                 $('#date-dropdown').empty().append('<option value="">-- Date --</option>');
                 $('#time-dropdown').empty().append('<option value="">-- Time --</option>');
                 $('#shift-dropdown').empty().append('<option value="">-- Shift --</option>');
-        
-                // If part number selected, fetch dates
+                $('#cycle-off-time-dropdown').empty().append('<option value="">-- Cycle Off Time --</option>');
+    
                 if (partNumber) {
                     $.ajax({
                         url: "{% url 'booth:get_filters_for_part' %}",
@@ -245,15 +244,15 @@
                     });
                 }
             });
-        
-            // Step 2: On Date change → Load Times
+    
+            // Step 2: Date → Times
             $('#date-dropdown').on('change', function () {
                 const partNumber = $('#part-number-dropdown').val();
                 const selectedDate = $(this).val();
-
                 $('#time-dropdown').empty().append('<option value="">-- Time --</option>');
                 $('#shift-dropdown').empty().append('<option value="">-- Shift --</option>');
-
+                $('#cycle-off-time-dropdown').empty().append('<option value="">-- Cycle Off Time --</option>');
+    
                 if (partNumber && selectedDate) {
                     $.ajax({
                         url: "{% url 'booth:get_filters_for_part' %}",
@@ -265,12 +264,11 @@
                         success: function (data) {
                             if (data.times && data.times.length) {
                                 data.times.forEach(time => {
-                                    // Convert time to HH:mm:ss format
                                     let formattedTime = new Date(`1970-01-01T${time}`).toLocaleTimeString([], {
                                         hour: '2-digit',
                                         minute: '2-digit',
                                         second: '2-digit',
-                                        hour12: false // 24-hour format
+                                        hour12: false
                                     });
                                     $('#time-dropdown').append(`<option value="${time}">${formattedTime}</option>`);
                                 });
@@ -282,15 +280,15 @@
                     });
                 }
             });
-        
-            // Step 3: On Time change → Load Shifts
+    
+            // Step 3: Time → Shifts
             $('#time-dropdown').on('change', function () {
                 const partNumber = $('#part-number-dropdown').val();
                 const selectedDate = $('#date-dropdown').val();
                 const selectedTime = $(this).val();
-        
                 $('#shift-dropdown').empty().append('<option value="">-- Shift --</option>');
-        
+                $('#cycle-off-time-dropdown').empty().append('<option value="">-- Cycle Off Time --</option>');
+    
                 if (partNumber && selectedDate && selectedTime) {
                     $.ajax({
                         url: "{% url 'booth:get_filters_for_part' %}",
@@ -313,7 +311,39 @@
                     });
                 }
             });
-        });        
-    </script>
+    
+            // Step 4: Shift → Cycle Off Times
+            $('#shift-dropdown').on('change', function () {
+                const partNumber = $('#part-number-dropdown').val();
+                const selectedDate = $('#date-dropdown').val();
+                const selectedTime = $('#time-dropdown').val();
+                const selectedShift = $(this).val();
+                $('#cycle-off-time-dropdown').empty().append('<option value="">-- Cycle Off Time --</option>');
+    
+                if (partNumber && selectedDate && selectedTime && selectedShift) {
+                    $.ajax({
+                        url: "{% url 'booth:get_filters_for_part' %}",
+                        method: "GET",
+                        data: {
+                            part_number: partNumber,
+                            selected_date: selectedDate,
+                            selected_time: selectedTime,
+                            selected_shift: selectedShift
+                        },
+                        success: function (data) {
+                            if (data.cycle_off_times && data.cycle_off_times.length) {
+                                data.cycle_off_times.forEach(offTime => {
+                                    $('#cycle-off-time-dropdown').append(`<option value="${offTime}">${offTime}</option>`);
+                                });
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Error fetching cycle off times:", error);
+                        }
+                    });
+                }
+            });
+        });
+    </script>    
 </body>
 </html>

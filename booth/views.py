@@ -201,8 +201,6 @@ def manual_entry_view(request):
                 existing_record.plan_production_qty = get_int(request.POST.get('planned_qty'))
                 existing_record.rejection_qty = get_int(request.POST.get('rejection_qty'))
                 existing_record.remarks_off_time = request.POST.get('remarks_off_time')
-                existing_record.cycle_on_time = get_float(request.POST.get('cycle_on_time'))
-                existing_record.cycle_off_time = get_float(request.POST.get('cycle_off_time'))
 
                 # Additional manual fields
                 existing_record.paint_batch_no = request.POST.get('paint_batch_no')
@@ -244,16 +242,21 @@ def submit_part_number(request):
         handle_recipe_change_with_input(part_number)
         return JsonResponse({'message': 'Part number set successfully'})
 
+from django.db.models.functions import Round  # For rounding float fields
+
 def get_filters_for_part(request):
     part_number = request.GET.get('part_number')
     selected_date = request.GET.get('selected_date')
     selected_time = request.GET.get('selected_time')
+    selected_shift = request.GET.get('selected_shift')
 
     response_data = {}
 
     if part_number and not selected_date:
         # Return unique dates
-        dates = OEEDashboardData.objects.filter(part_number=part_number).values_list('date', flat=True).distinct()
+        dates = OEEDashboardData.objects.filter(
+            part_number=part_number
+        ).values_list('date', flat=True).distinct()
         response_data['dates'] = sorted(list(set(str(d) for d in dates)))
 
     elif part_number and selected_date and not selected_time:
@@ -264,7 +267,7 @@ def get_filters_for_part(request):
         ).values_list('time', flat=True).distinct()
         response_data['times'] = sorted(list(set(str(t) for t in times)))
 
-    elif part_number and selected_date and selected_time:
+    elif part_number and selected_date and selected_time and not selected_shift:
         # Return shifts for given part, date, and time
         shifts = OEEDashboardData.objects.filter(
             part_number=part_number,
@@ -272,5 +275,18 @@ def get_filters_for_part(request):
             time=selected_time
         ).values_list('shift', flat=True).distinct()
         response_data['shifts'] = sorted(list(set(str(s) for s in shifts)))
+
+    elif part_number and selected_date and selected_time and selected_shift:
+        # Return cycle_off_time values for the selected combination
+        off_times = OEEDashboardData.objects.filter(
+            part_number=part_number,
+            date=selected_date,
+            time=selected_time,
+            shift=selected_shift
+        ).values_list('cycle_off_time', flat=True).distinct()
+
+        # Optional: sort and round off times to 2 decimal places
+        rounded_off_times = sorted(list(set(round(float(t), 2) for t in off_times if t is not None)))
+        response_data['cycle_off_times'] = rounded_off_times
 
     return JsonResponse(response_data)
