@@ -4,11 +4,14 @@ from .models import OEEDashboardData
 @admin.register(OEEDashboardData)
 class OEEDashboardAdmin(admin.ModelAdmin):
     list_display = [
-        'id','date', 'time', 'shift',
+        'id', 'date', 'time', 'shift',
         'part_number', 'cycle_time', 'plan_production_qty',
         'rejection_qty', 'ok_production', 'total_production',
         'shift_down_time', 'cycle_off_time', 'cycle_on_time',
-        'remarks_off_time', 'dft', 'viscosity', 'resistivity',
+        'remarks_off_time', 'paint_batch_no', 'thinner_batch_no',
+        'raw_paint_viscosity', 'paint_viscosity',
+        'seam_dft', 'mid_1_dft', 'mid_2_dft',
+        'upper_1_dft', 'upper_2_dft', 'dome_dft',
         'convection_temp_1', 'convection_temp_2', 'convection_temp_3',
         'cooling_temp_1', 'cooling_temp_2',
     ]
@@ -20,7 +23,7 @@ class OEEDashboardAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Basic Info', {
-            'fields': ('shift', 'part_number')  # removed 'date', 'time'
+            'fields': ('shift', 'part_number')
         }),
         ('Production Data (User + PLC)', {
             'fields': (
@@ -34,8 +37,13 @@ class OEEDashboardAdmin(admin.ModelAdmin):
                 'cycle_on_time', 'remarks_off_time'
             )
         }),
-        ('Quality Measurements', {
-            'fields': ('dft', 'viscosity', 'resistivity')
+        ('Paint Quality Data', {
+            'fields': (
+                'paint_batch_no', 'thinner_batch_no',
+                'raw_paint_viscosity', 'paint_viscosity',
+                'seam_dft', 'mid_1_dft', 'mid_2_dft',
+                'upper_1_dft', 'upper_2_dft', 'dome_dft'
+            )
         }),
         ('Temperature Monitoring', {
             'fields': (
@@ -45,5 +53,4 @@ class OEEDashboardAdmin(admin.ModelAdmin):
         }),
     )
 
-    # Now date, time, total_production, shift_down_time are read-only
     readonly_fields = ('date', 'time', 'total_production', 'shift_down_time')

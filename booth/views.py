@@ -51,9 +51,6 @@ def dashboard_form_view(request):
                 existing.plan_production_qty = get_int(data.get('planned_qty'))
                 existing.rejection_qty = get_int(data.get('rejection_qty'))
                 existing.remarks_off_time = data.get('remarks_off_time')
-                existing.dft = get_float(data.get('dft'))
-                existing.viscosity = get_float(data.get('viscosity'))
-                existing.resistivity = get_float(data.get('resistivity'))
                 existing.time = now.time()
                 existing.cycle_on_time = get_float(data.get('cycle_on_time'))
                 existing.cycle_off_time = get_float(data.get('cycle_off_time'))
@@ -68,9 +65,6 @@ def dashboard_form_view(request):
                     plan_production_qty=get_int(data.get('planned_qty')),
                     rejection_qty=get_int(data.get('rejection_qty')),
                     remarks_off_time=data.get('remarks_off_time'),
-                    dft=get_float(data.get('dft')),
-                    viscosity=get_float(data.get('viscosity')),
-                    resistivity=get_float(data.get('resistivity')),
                     ok_production=0,
                     cycle_on_time=get_float(data.get('cycle_on_time')),
                     cycle_off_time=get_float(data.get('cycle_off_time')),
@@ -112,18 +106,27 @@ def fetch_torque_data(request):
             'cycle_off_time': d.cycle_off_time,
             'cycle_on_time': d.cycle_on_time,
             'remarks_off_time': d.remarks_off_time,
-            'dft': d.dft,
-            'viscosity': d.viscosity,
-            'resistivity': d.resistivity,
             'convection_temp_1': d.convection_temp_1,
             'convection_temp_2': d.convection_temp_2,
             'convection_temp_3': d.convection_temp_3,
             'cooling_temp_1': d.cooling_temp_1,
             'cooling_temp_2': d.cooling_temp_2,
+            # Manual fields
+            'paint_batch_no': d.paint_batch_no,
+            'thinner_batch_no': d.thinner_batch_no,
+            'raw_paint_viscosity': d.raw_paint_viscosity,
+            'paint_viscosity': d.paint_viscosity,
+            'seam_dft': d.seam_dft,
+            'mid_1_dft': d.mid_1_dft,
+            'mid_2_dft': d.mid_2_dft,
+            'upper_1_dft': d.upper_1_dft,
+            'upper_2_dft': d.upper_2_dft,
+            'dome_dft': d.dome_dft,
         }
         for d in data
     ]
     return JsonResponse({'data': json_data})
+
 # OEE Calculation Logic
 def calculate_oee(record):
     try:
@@ -162,9 +165,6 @@ def edit_oee_record(request, pk):
             record.plan_production_qty = get_int(data.get('planned_qty'))
             record.rejection_qty = get_int(data.get('rejection_qty'))
             record.remarks_off_time = data.get('remarks_off_time')
-            record.dft = get_float(data.get('dft'))
-            record.viscosity = get_float(data.get('viscosity'))
-            record.resistivity = get_float(data.get('resistivity'))
             record.cycle_on_time = get_float(data.get('cycle_on_time'))
             record.cycle_off_time = get_float(data.get('cycle_off_time'))
             record.save()
@@ -181,7 +181,6 @@ def get_part_numbers(request):
     part_numbers = OEEDashboardData.objects.values_list('part_number', flat=True).distinct()
     return JsonResponse({'part_numbers': list(part_numbers)})
 
-# Manual Entry
 def manual_entry_view(request):
     if request.method == 'POST':
         part_number = request.POST.get('part_number')
@@ -202,9 +201,21 @@ def manual_entry_view(request):
                 existing_record.plan_production_qty = get_int(request.POST.get('planned_qty'))
                 existing_record.rejection_qty = get_int(request.POST.get('rejection_qty'))
                 existing_record.remarks_off_time = request.POST.get('remarks_off_time')
-                existing_record.dft = get_float(request.POST.get('dft'))
-                existing_record.viscosity = get_float(request.POST.get('viscosity'))
-                existing_record.resistivity = get_float(request.POST.get('resistivity'))
+                existing_record.cycle_on_time = get_float(request.POST.get('cycle_on_time'))
+                existing_record.cycle_off_time = get_float(request.POST.get('cycle_off_time'))
+
+                # Additional manual fields
+                existing_record.paint_batch_no = request.POST.get('paint_batch_no')
+                existing_record.thinner_batch_no = request.POST.get('thinner_batch_no')
+                existing_record.raw_paint_viscosity = get_float(request.POST.get('raw_paint_viscosity'))
+                existing_record.paint_viscosity = get_float(request.POST.get('paint_viscosity'))
+                existing_record.seam_dft = get_int(request.POST.get('seam_dft'))
+                existing_record.mid_1_dft = get_int(request.POST.get('mid_1_dft'))
+                existing_record.mid_2_dft = get_int(request.POST.get('mid_2_dft'))
+                existing_record.upper_1_dft = get_int(request.POST.get('upper_1_dft'))
+                existing_record.upper_2_dft = get_int(request.POST.get('upper_2_dft'))
+                existing_record.dome_dft = get_int(request.POST.get('dome_dft'))
+
                 existing_record.save()
                 print(f"✅ Updated record: {existing_record.part_number} at {existing_record.time}")
             else:

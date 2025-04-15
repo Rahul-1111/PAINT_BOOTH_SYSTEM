@@ -31,26 +31,32 @@
             <h2>Manual Part Entry</h2>
             <form id="manual-entry-form" method="post" action="{% url 'booth:manual_entry' %}">
                 {% csrf_token %}
-                <div class="form-row" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                <div class="form-row" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
+            
+                    <!-- Part Number -->
                     <select name="part_number" id="part-number-dropdown" required>
                         <option value="">-- Select Part Number --</option>
                     </select>
-
-                    <!-- Dynamic Date/Time/Shift Dropdowns -->
+            
+                    <!-- Dynamic Dropdowns -->
                     <select name="selected_date" id="date-dropdown" required>
                         <option value="">-- Date --</option>
                     </select>
+            
                     <select name="selected_time" id="time-dropdown" required>
                         <option value="">-- Time --</option>
                     </select>
+            
                     <select name="selected_shift" id="shift-dropdown" required>
                         <option value="">-- Shift --</option>
                     </select>
-
+            
+                    <!-- Production Fields -->
                     <input type="number" name="cycle_time" placeholder="Cycle Time (s)" step="0.01" required>
                     <input type="number" name="planned_qty" placeholder="Planned Qty" required>
                     <input type="number" name="rejection_qty" placeholder="Rejection Qty" required>
-
+            
+                    <!-- Remarks -->
                     <select name="remarks_off_time" required>
                         <option value="">-- Remarks --</option>
                         <option value="Maintenance">Maintenance</option>
@@ -59,14 +65,25 @@
                         <option value="Lunch Break">Lunch Break</option>
                         <option value="Other">Other</option>
                     </select>
-
-                    <input type="text" name="dft" placeholder="DFT" required>
-                    <input type="text" name="viscosity" placeholder="Viscosity" required>
-                    <input type="text" name="resistivity" placeholder="Resistivity" required>
-
+            
+                    <!-- New Fields in Same Format -->
+                    <input type="text" name="paint_batch_no" placeholder="Paint Batch No.">
+                    <input type="text" name="thinner_batch_no" placeholder="Thinner Batch No.">
+            
+                    <input type="number" name="raw_paint_viscosity" step="0.01" placeholder="Raw Paint Viscosity (Seconds)">
+                    <input type="number" name="paint_viscosity" step="0.01" placeholder="Paint Viscosity (Seconds)">
+            
+                    <input type="number" name="seam_dft" step="0.01" placeholder="Seam DFT (micron)">
+                    <input type="number" name="mid_1_dft" step="0.01" placeholder="Mid 1 DFT (micron)">
+                    <input type="number" name="mid_2_dft" step="0.01" placeholder="Mid 2 DFT (micron)">
+                    <input type="number" name="upper_1_dft" step="0.01" placeholder="Upper 1 DFT (micron)">
+                    <input type="number" name="upper_2_dft" step="0.01" placeholder="Upper 2 DFT (micron)">
+                    <input type="number" name="dome_dft" step="0.01" placeholder="Dome DFT (micron)">
+            
+                    <!-- Submit -->
                     <button type="submit" class="form-button">Submit</button>
                 </div>
-            </form>
+            </form>            
         </div>
 
         <!-- OEE Records Table -->
@@ -90,14 +107,22 @@
                             <th>CYCLE OFF TIME</th>
                             <th>CYCLE ON TIME</th>
                             <th>REMARKS</th>
-                            <th>DFT</th>
-                            <th>VISCOSITY</th>
-                            <th>RESISTIVITY</th>
                             <th>CONV TEMP 1</th>
                             <th>CONV TEMP 2</th>
                             <th>CONV TEMP 3</th>
                             <th>COOL TEMP 1</th>
                             <th>COOL TEMP 2</th>
+                            <!-- New fields below -->
+                            <th>PAINT BATCH</th>
+                            <th>THINNER BATCH</th>
+                            <th>RAW VISCOSITY</th>
+                            <th>PAINT VISCOSITY</th>
+                            <th>SEAM DFT</th>
+                            <th>MID 1 DFT</th>
+                            <th>MID 2 DFT</th>
+                            <th>UPPER 1 DFT</th>
+                            <th>UPPER 2 DFT</th>
+                            <th>DOME DFT</th>
                         </tr>
                     </thead>
                     <tbody id="torque-table-body">
@@ -138,14 +163,22 @@
                                 <td>${row.cycle_off_time ?? ''}</td>
                                 <td>${row.cycle_on_time ?? ''}</td>
                                 <td>${row.remarks_off_time ?? ''}</td>
-                                <td>${row.dft ?? ''}</td>
-                                <td>${row.viscosity ?? ''}</td>
-                                <td>${row.resistivity ?? ''}</td>
                                 <td>${row.convection_temp_1 ?? ''}</td>
                                 <td>${row.convection_temp_2 ?? ''}</td>
                                 <td>${row.convection_temp_3 ?? ''}</td>
                                 <td>${row.cooling_temp_1 ?? ''}</td>
                                 <td>${row.cooling_temp_2 ?? ''}</td>
+                                <!-- New fields -->
+                                <td>${row.paint_batch_no ?? ''}</td>
+                                <td>${row.thinner_batch_no ?? ''}</td>
+                                <td>${row.raw_paint_viscosity ?? ''}</td>
+                                <td>${row.paint_viscosity ?? ''}</td>
+                                <td>${row.seam_dft ?? ''}</td>
+                                <td>${row.mid_1_dft ?? ''}</td>
+                                <td>${row.mid_2_dft ?? ''}</td>
+                                <td>${row.upper_1_dft ?? ''}</td>
+                                <td>${row.upper_2_dft ?? ''}</td>
+                                <td>${row.dome_dft ?? ''}</td>
                             </tr>`;
                         tableBody.append(tableRow);
                     });

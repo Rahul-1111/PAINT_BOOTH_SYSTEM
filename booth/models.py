@@ -31,18 +31,22 @@ class OEEDashboardData(models.Model):
     remarks_off_time = models.CharField(
         max_length=255,
         choices=[
-            ('breakdown', 'Breakdown'),
-            ('maintenance', 'Maintenance'),
-            ('idle', 'Idle'),
-            ('others', 'Others')
+            
         ],
         help_text="Remarks for OFF Time"
     )
 
-    # Manual User Inputs
-    dft = models.FloatField(help_text="DFT")
-    viscosity = models.FloatField(help_text="Viscosity")
-    resistivity = models.FloatField(help_text="Resistivity")
+    # New fields to be added
+    paint_batch_no = models.CharField(max_length=255, blank=True, null=True)  # Alphanumeric
+    thinner_batch_no = models.CharField(max_length=255, blank=True, null=True)  # Alphanumeric
+    raw_paint_viscosity = models.FloatField(blank=True, null=True)  # Floating
+    paint_viscosity = models.FloatField(blank=True, null=True)  # Floating
+    seam_dft = models.IntegerField(blank=True, null=True)  # Integer
+    mid_1_dft = models.IntegerField(blank=True, null=True)  # Integer
+    mid_2_dft = models.IntegerField(blank=True, null=True)  # Integer
+    upper_1_dft = models.IntegerField(blank=True, null=True)  # Integer
+    upper_2_dft = models.IntegerField(blank=True, null=True)  # Integer
+    dome_dft = models.IntegerField(blank=True, null=True)  # Integer
 
     def save(self, *args, **kwargs):
         self.total_production = self.ok_production + self.rejection_qty
