@@ -151,7 +151,9 @@
                     const tableBody = $("#torque-table-body");
                     tableBody.empty();
     
-                    response.data.forEach((row, index) => {
+                    response.data
+                        .filter(row => row.cycle_off_time)  // 👈 Filter here
+                        .forEach((row, index) => {
                         const tableRow = `
                             <tr>
                                 <td>${index + 1}</td>
