@@ -245,47 +245,50 @@ def submit_part_number(request):
 from django.db.models.functions import Round  # For rounding float fields
 
 def get_filters_for_part(request):
-    part_number = request.GET.get('part_number')
     selected_date = request.GET.get('selected_date')
-    selected_time = request.GET.get('selected_time')
     selected_shift = request.GET.get('selected_shift')
+    part_number = request.GET.get('part_number')
+    selected_time = request.GET.get('selected_time')
 
     response_data = {}
 
-    if part_number and not selected_date:
-        # Return unique dates
-        dates = OEEDashboardData.objects.filter(
-            part_number=part_number
-        ).values_list('date', flat=True).distinct()
+    # Handle the case when no parameters are provided (initial load of dates)
+    if not any([selected_date, selected_shift, part_number, selected_time]):
+        dates = OEEDashboardData.objects.values_list('date', flat=True).distinct()
         response_data['dates'] = sorted(list(set(str(d) for d in dates)))
 
-    elif part_number and selected_date and not selected_time:
-        # Return unique times for given part and date
-        times = OEEDashboardData.objects.filter(
-            part_number=part_number,
+    elif selected_date and not selected_shift:
+        # Return unique shifts for the selected date
+        shifts = OEEDashboardData.objects.filter(
             date=selected_date
+        ).values_list('shift', flat=True).distinct()
+        response_data['shifts'] = sorted(list(set(s for s in shifts)))
+
+    elif selected_date and selected_shift and not part_number:
+        # Return unique part numbers for the selected date and shift
+        part_numbers = OEEDashboardData.objects.filter(
+            date=selected_date,
+            shift=selected_shift
+        ).values_list('part_number', flat=True).distinct()
+        response_data['part_numbers'] = sorted(list(set(p for p in part_numbers)))
+
+    elif selected_date and selected_shift and part_number and not selected_time:
+        # Return unique times for the selected date, shift, and part number
+        times = OEEDashboardData.objects.filter(
+            date=selected_date,
+            shift=selected_shift,
+            part_number=part_number
         ).values_list('time', flat=True).distinct()
         response_data['times'] = sorted(list(set(str(t) for t in times)))
 
-    elif part_number and selected_date and selected_time and not selected_shift:
-        # Return shifts for given part, date, and time
-        shifts = OEEDashboardData.objects.filter(
-            part_number=part_number,
-            date=selected_date,
-            time=selected_time
-        ).values_list('shift', flat=True).distinct()
-        response_data['shifts'] = sorted(list(set(str(s) for s in shifts)))
-
-    elif part_number and selected_date and selected_time and selected_shift:
+    elif selected_date and selected_shift and part_number and selected_time:
         # Return cycle_off_time values for the selected combination
         off_times = OEEDashboardData.objects.filter(
-            part_number=part_number,
             date=selected_date,
-            time=selected_time,
-            shift=selected_shift
+            shift=selected_shift,
+            part_number=part_number,
+            time=selected_time
         ).values_list('cycle_off_time', flat=True).distinct()
-
-        # Optional: sort and round off times to 2 decimal places
         rounded_off_times = sorted(list(set(round(float(t), 2) for t in off_times if t is not None)))
         response_data['cycle_off_times'] = rounded_off_times
 

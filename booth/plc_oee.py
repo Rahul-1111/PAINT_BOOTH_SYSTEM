@@ -6,7 +6,7 @@ from booth.models import OEEDashboardData
 import asyncio
 
 plc_ip = "192.168.3.250"
-plc_port = 5007
+plc_port = 502
 plc = pymcprotocol.Type3E()
 
 last_entered_part_number = None  # 🔁 Store last entered part (in Python only)
@@ -105,10 +105,6 @@ def store_oee_data(cycle_on_time=None, cycle_off_time=None):
             convection_temp_3=temps[2],
             cooling_temp_1=temps[3],
             cooling_temp_2=temps[4],
-            remarks_off_time='idle',
-            dft=0.0,
-            viscosity=0.0,
-            resistivity=0.0,
         )
         data.save()
         print(f"📥 OEE Data Saved for Part: {data.part_number}")

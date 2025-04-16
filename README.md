@@ -9,5 +9,5 @@ python manage.py runserver
 pip install -r requirements.txt
 python manage.py createsuperuser
 python manage.py collectstatic
-
 daphne Paint_booth.asgi:application
+
