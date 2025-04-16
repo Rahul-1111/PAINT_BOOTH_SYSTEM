@@ -273,12 +273,12 @@ def get_filters_for_part(request):
         response_data['part_numbers'] = sorted(list(set(p for p in part_numbers)))
 
     elif selected_date and selected_shift and part_number and not selected_time:
-        # Return unique times for the selected date, shift, and part number
+        # Return unique times that have non-empty and non-zero cycle_off_time
         times = OEEDashboardData.objects.filter(
             date=selected_date,
             shift=selected_shift,
             part_number=part_number
-        ).values_list('time', flat=True).distinct()
+        ).exclude(cycle_off_time__isnull=True).exclude(cycle_off_time=0).values_list('time', flat=True).distinct()
         response_data['times'] = sorted(list(set(str(t) for t in times)))
 
     elif selected_date and selected_shift and part_number and selected_time:
