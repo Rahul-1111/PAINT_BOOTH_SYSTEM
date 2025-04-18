@@ -23,72 +23,6 @@
         #notification.error {
             background: #dc3545;
         }
-        .manual-entry-container {
-            background:rgb(45, 148, 244);
-            padding: 10px;
-            border-radius: 20px;
-            box-shadow: 0 8px 20px rgba(0, 0, 50, 0.1);
-            max-width: 1900px;
-            margin: auto;
-        }
-        
-        .form-title {
-            text-align: center;
-            font-size: 26px;
-            color:rgb(255, 255, 255);
-            margin-bottom: 10px;
-        }
-        
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 15px;
-        }
-        
-        .form-grid input,
-        .form-grid select {
-            padding: 10px 12px;
-            border-radius: 12px;
-            border: 1px solidrgb(144, 202, 249);
-            font-size: 14px;
-            background: white;
-            transition: 0.3s ease;
-        }
-        
-        .form-grid input:focus,
-        .form-grid select:focus {
-            border-color: #2196f3;
-            outline: none;
-            box-shadow: 0 0 8px rgba(33, 150, 243, 0.2);
-        }
-        
-        .form-button {
-            padding: 15px;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 28;
-            transition: background 0.3s ease;
-        }
-        
-        .submit-btn {
-            background-color:rgb(50, 157, 244);
-            color: white;
-        }
-        
-        .submit-btn:hover {
-            background-color: #42a5f5;
-        }
-        
-        .clear-btn {
-            background-color: #e1f5fe;
-            color: #0277bd;
-        }
-        
-        .clear-btn:hover {
-            background-color: #b3e5fc;
-        }
         
     </style>
 </head>
@@ -116,11 +50,11 @@
 
         <!-- Manual Entry Form (Hidden Toggle) -->
         <div class="section" id="manual-entry-section" style="display: none;">
-            <div class="manual-entry-container">
-                <h2 class="form-title">Manual Part Entry</h2>
+            <div>
+                <h2>Manual Part Entry</h2>
                 <form id="manual-entry-form" method="post" action="{% url 'booth:manual_entry' %}">
                     {% csrf_token %}
-                    <div class="form-grid">
+                    <div class="form-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
                         <!-- Dynamic Dropdowns -->
                         <select name="selected_date" id="date-dropdown" required>
                             <option value="">-- Date --</option>
@@ -150,7 +84,7 @@
                         <input type="number" name="upper_1_dft" step="1" min="0" placeholder="Upper 1 DFT (micron)">
                         <input type="number" name="upper_2_dft" step="1" min="0" placeholder="Upper 2 DFT (micron)">
                         <input type="number" name="dome_dft" step="1" min="0" placeholder="Dome DFT (micron)">
-
+                        
                         <select name="selected_time" id="time-dropdown" required>
                             <option value="">-- Time --</option>
                         </select>
@@ -169,14 +103,13 @@
                             <option value="Other">Other</option>
                         </select>
 
-                        <!-- Buttons -->
-                        <button type="submit" class="form-button submit-btn">Submit</button>
-                        <button type="button" id="clear-filters-btn" class="form-button clear-btn">Clear Filters</button>
+                        <!-- Submit and Clear -->
+                        <button type="submit" class="form-button">Submit</button>
+                        <button type="button" id="clear-filters-btn" class="form-button">Clear Filters</button>
                     </div>
-                </form>
+                </form>            
             </div>
         </div>
-
 
         <!-- OEE Records Table -->
         <div class="section" style="margin-top: 20px;">
