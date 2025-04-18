@@ -6,6 +6,91 @@
     <title>MONITOR</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <script src="{% static 'jquery-3.6.0.min.js' %}"></script>
+    <style>
+        #notification {
+            display: none;
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            color: white;
+            border-radius: 4px;
+            z-index: 1000;
+        }
+        #notification.success {
+            background: #28a745;
+        }
+        #notification.error {
+            background: #dc3545;
+        }
+        .manual-entry-container {
+            background:rgb(45, 148, 244);
+            padding: 10px;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 50, 0.1);
+            max-width: 1900px;
+            margin: auto;
+        }
+        
+        .form-title {
+            text-align: center;
+            font-size: 26px;
+            color:rgb(255, 255, 255);
+            margin-bottom: 10px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 15px;
+        }
+        
+        .form-grid input,
+        .form-grid select {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solidrgb(144, 202, 249);
+            font-size: 14px;
+            background: white;
+            transition: 0.3s ease;
+        }
+        
+        .form-grid input:focus,
+        .form-grid select:focus {
+            border-color: #2196f3;
+            outline: none;
+            box-shadow: 0 0 8px rgba(33, 150, 243, 0.2);
+        }
+        
+        .form-button {
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 28;
+            transition: background 0.3s ease;
+        }
+        
+        .submit-btn {
+            background-color:rgb(50, 157, 244);
+            color: white;
+        }
+        
+        .submit-btn:hover {
+            background-color: #42a5f5;
+        }
+        
+        .clear-btn {
+            background-color: #e1f5fe;
+            color: #0277bd;
+        }
+        
+        .clear-btn:hover {
+            background-color: #b3e5fc;
+        }
+        
+    </style>
 </head>
 <body>
     <header>
@@ -13,6 +98,9 @@
     </header>
 
     <div class="content">
+        <!-- Notification Div -->
+        <div id="notification"></div>
+
         <!-- Add/Edit Record and Part Input -->
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
             <button id="show-form-btn" class="form-button" style="margin-bottom: 10px;">➕ Add/Edit Record</button>  
@@ -28,67 +116,67 @@
 
         <!-- Manual Entry Form (Hidden Toggle) -->
         <div class="section" id="manual-entry-section" style="display: none;">
-            <div>
-            <h2>Manual Part Entry</h2>
-            <form id="manual-entry-form" method="post" action="{% url 'booth:manual_entry' %}">
-                {% csrf_token %}
-                <div class="form-row" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
-            
-                    <!-- Dynamic Dropdowns -->
-                    <select name="selected_date" id="date-dropdown" required>
-                        <option value="">-- Date --</option>
-                    </select>
+            <div class="manual-entry-container">
+                <h2 class="form-title">Manual Part Entry</h2>
+                <form id="manual-entry-form" method="post" action="{% url 'booth:manual_entry' %}">
+                    {% csrf_token %}
+                    <div class="form-grid">
+                        <!-- Dynamic Dropdowns -->
+                        <select name="selected_date" id="date-dropdown" required>
+                            <option value="">-- Date --</option>
+                        </select>
 
-                    <select name="selected_shift" id="shift-dropdown" required>
-                        <option value="">-- Shift --</option>
-                    </select>
+                        <select name="selected_shift" id="shift-dropdown" required>
+                            <option value="">-- Shift --</option>
+                        </select>
 
-                    <select name="part_number" id="part-number-dropdown" required>
-                        <option value="">-- Select Part Number --</option>
-                    </select> 
-            
-                    <select name="selected_time" id="time-dropdown" required>
-                        <option value="">-- Time --</option>
-                    </select>
+                        <select name="part_number" id="part-number-dropdown" required>
+                            <option value="">-- Select Part Number --</option>
+                        </select> 
 
-                    <select id="cycle-off-time-dropdown" class="form-control">
-                        <option value="">-- Cycle Off Time --</option>
-                    </select>
-                    
-                    <!-- Remarks -->
-                    <select name="remarks_off_time" required>
-                        <option value="">-- Remarks --</option>
-                        <option value="Maintenance">Maintenance</option>
-                        <option value="Material Shortage">Material Shortage</option>
-                        <option value="Power Failure">Power Failure</option>
-                        <option value="Lunch Break">Lunch Break</option>
-                        <option value="Other">Other</option>
-                    </select>
-            
-                    <!-- Production Fields -->
-                    <input type="number" name="cycle_time" placeholder="Cycle Time (s)" step="0.01" required>
-                    <input type="number" name="planned_qty" placeholder="Planned Qty" required>
-                    <input type="number" name="rejection_qty" placeholder="Rejection Qty" required>
-            
-                    <!-- New Fields in Same Format -->
-                    <input type="text" name="paint_batch_no" placeholder="Paint Batch No.">
-                    <input type="text" name="thinner_batch_no" placeholder="Thinner Batch No.">
-            
-                    <input type="number" name="raw_paint_viscosity" step="0.01" placeholder="Raw Paint Viscosity (Seconds)">
-                    <input type="number" name="paint_viscosity" step="0.01" placeholder="Paint Viscosity (Seconds)">
-            
-                    <input type="number" name="seam_dft" step="1" placeholder="Seam DFT (micron)">
-                    <input type="number" name="mid_1_dft" step="1" placeholder="Mid 1 DFT (micron)">
-                    <input type="number" name="mid_2_dft" step="1" placeholder="Mid 2 DFT (micron)">
-                    <input type="number" name="upper_1_dft" step="1" placeholder="Upper 1 DFT (micron)">
-                    <input type="number" name="upper_2_dft" step="1" placeholder="Upper 2 DFT (micron)">
-                    <input type="number" name="dome_dft" step="1" placeholder="Dome DFT (micron)">
-            
-                    <!-- Submit -->
-                    <button type="submit" class="form-button">Submit</button>
-                </div>
-            </form>            
+                        <!-- Production Fields -->
+                        <input type="number" name="cycle_time" placeholder="Cycle Time (s)" step="0.01" min="0" required>
+                        <input type="number" name="planned_qty" placeholder="Planned Qty" min="0" required>
+                        <input type="number" name="rejection_qty" placeholder="Rejection Qty" min="0" required>
+
+                        <!-- New Fields -->
+                        <input type="text" name="paint_batch_no" placeholder="Paint Batch No.">
+                        <input type="text" name="thinner_batch_no" placeholder="Thinner Batch No.">
+                        <input type="number" name="raw_paint_viscosity" step="0.01" min="0" placeholder="Raw Paint Viscosity (Seconds)">
+                        <input type="number" name="paint_viscosity" step="0.01" min="0" placeholder="Paint Viscosity (Seconds)">
+                        <input type="number" name="seam_dft" step="1" min="0" placeholder="Seam DFT (micron)">
+                        <input type="number" name="mid_1_dft" step="1" min="0" placeholder="Mid 1 DFT (micron)">
+                        <input type="number" name="mid_2_dft" step="1" min="0" placeholder="Mid 2 DFT (micron)">
+                        <input type="number" name="upper_1_dft" step="1" min="0" placeholder="Upper 1 DFT (micron)">
+                        <input type="number" name="upper_2_dft" step="1" min="0" placeholder="Upper 2 DFT (micron)">
+                        <input type="number" name="dome_dft" step="1" min="0" placeholder="Dome DFT (micron)">
+
+                        <select name="selected_time" id="time-dropdown" required>
+                            <option value="">-- Time --</option>
+                        </select>
+
+                        <select id="cycle-off-time-dropdown" class="form-control">
+                            <option value="">-- Cycle Off Time --</option>
+                        </select>
+
+                        <!-- Remarks -->
+                        <select name="remarks_off_time" required>
+                            <option value="">-- Remarks --</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Material Shortage">Material Shortage</option>
+                            <option value="Power Failure">Power Failure</option>
+                            <option value="Lunch Break">Lunch Break</option>
+                            <option value="Other">Other</option>
+                        </select>
+
+                        <!-- Buttons -->
+                        <button type="submit" class="form-button submit-btn">Submit</button>
+                        <button type="button" id="clear-filters-btn" class="form-button clear-btn">Clear Filters</button>
+                    </div>
+                </form>
+            </div>
         </div>
+
 
         <!-- OEE Records Table -->
         <div class="section" style="margin-top: 20px;">
@@ -116,7 +204,6 @@
                             <th>CONV TEMP 3</th>
                             <th>COOL TEMP 1</th>
                             <th>COOL TEMP 2</th>
-                            <!-- New fields below -->
                             <th>PAINT BATCH</th>
                             <th>THINNER BATCH</th>
                             <th>RAW VISCOSITY</th>
@@ -135,14 +222,22 @@
                 </table>
             </div>
         </div>
-        </div>
     </div>
 
     <footer>
-        <p>&copy; 2025 PAINT BOOTH SYSTEM</p>
+        <p>© 2025 PAINT BOOTH SYSTEM</p>
     </footer>
 
     <script>
+        // Set up CSRF token for AJAX POST requests
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", $('[name=csrfmiddlewaretoken]').val());
+                }
+            }
+        });
+
         function fetchTableData() {
             $.ajax({
                 url: "{% url 'booth:fetch_torque_data' %}",
@@ -152,50 +247,50 @@
                     tableBody.empty();
     
                     response.data
-                        .filter(row => row.cycle_off_time)  // 👈 Filter here
+                        .filter(row => row.cycle_off_time)
                         .forEach((row, index) => {
-                        const tableRow = `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td>${row.date ?? ''}</td>
-                                <td>${row.time ?? ''}</td>
-                                <td>${row.shift ?? ''}</td>
-                                <td>${row.part_number ?? ''}</td>
-                                <td>${row.cycle_time ?? ''}</td>
-                                <td>${row.plan_production_qty ?? ''}</td>
-                                <td>${row.ok_production ?? ''}</td>
-                                <td>${row.rejection_qty ?? ''}</td>
-                                <td>${row.total_production ?? ''}</td>
-                                <td>${row.shift_down_time ?? ''}</td>
-                                <td>${row.cycle_off_time ?? ''}</td>
-                                <td>${row.cycle_on_time ?? ''}</td>
-                                <td>${row.remarks_off_time ?? ''}</td>
-                                <td>${row.convection_temp_1 ?? ''}</td>
-                                <td>${row.convection_temp_2 ?? ''}</td>
-                                <td>${row.convection_temp_3 ?? ''}</td>
-                                <td>${row.cooling_temp_1 ?? ''}</td>
-                                <td>${row.cooling_temp_2 ?? ''}</td>
-                                <td>${row.paint_batch_no ?? ''}</td>
-                                <td>${row.thinner_batch_no ?? ''}</td>
-                                <td>${row.raw_paint_viscosity ?? ''}</td>
-                                <td>${row.paint_viscosity ?? ''}</td>
-                                <td>${row.seam_dft ?? ''}</td>
-                                <td>${row.mid_1_dft ?? ''}</td>
-                                <td>${row.mid_2_dft ?? ''}</td>
-                                <td>${row.upper_1_dft ?? ''}</td>
-                                <td>${row.upper_2_dft ?? ''}</td>
-                                <td>${row.dome_dft ?? ''}</td>
-                            </tr>`;
-                        tableBody.append(tableRow);
-                    });
+                            const tableRow = `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${row.date ?? ''}</td>
+                                    <td>${row.time ?? ''}</td>
+                                    <td>${row.shift ?? ''}</td>
+                                    <td>${row.part_number ?? ''}</td>
+                                    <td>${row.cycle_time ?? ''}</td>
+                                    <td>${row.plan_production_qty ?? ''}</td>
+                                    <td>${row.ok_production ?? ''}</td>
+                                    <td>${row.rejection_qty ?? ''}</td>
+                                    <td>${row.total_production ?? ''}</td>
+                                    <td>${row.shift_down_time ?? ''}</td>
+                                    <td>${row.cycle_off_time ?? ''}</td>
+                                    <td>${row.cycle_on_time ?? ''}</td>
+                                    <td>${row.remarks_off_time ?? ''}</td>
+                                    <td>${row.convection_temp_1 ?? ''}</td>
+                                    <td>${row.convection_temp_2 ?? ''}</td>
+                                    <td>${row.convection_temp_3 ?? ''}</td>
+                                    <td>${row.cooling_temp_1 ?? ''}</td>
+                                    <td>${row.cooling_temp_2 ?? ''}</td>
+                                    <td>${row.paint_batch_no ?? ''}</td>
+                                    <td>${row.thinner_batch_no ?? ''}</td>
+                                    <td>${row.raw_paint_viscosity ?? ''}</td>
+                                    <td>${row.paint_viscosity ?? ''}</td>
+                                    <td>${row.seam_dft ?? ''}</td>
+                                    <td>${row.mid_1_dft ?? ''}</td>
+                                    <td>${row.mid_2_dft ?? ''}</td>
+                                    <td>${row.upper_1_dft ?? ''}</td>
+                                    <td>${row.upper_2_dft ?? ''}</td>
+                                    <td>${row.dome_dft ?? ''}</td>
+                                </tr>`;
+                            tableBody.append(tableRow);
+                        });
                 },
                 error: function(xhr, status, error) {
                     console.error("Error loading OEE data:", error);
+                    $("#notification").text("Error loading data").addClass("error").fadeIn(200).delay(3000).fadeOut(200);
                 }
             });
         }
     
-        // Function to load dates initially
         function loadDates() {
             $.ajax({
                 url: "{% url 'booth:get_filters_for_part' %}",
@@ -211,27 +306,119 @@
                 },
                 error: function(err) {
                     console.error("Error fetching dates:", err);
+                    $("#notification").text("Error fetching dates").addClass("error").fadeIn(200).delay(3000).fadeOut(200);
                 }
             });
         }
 
+        function resetDropdowns() {
+            // Clear and reset all dropdowns
+            $('#date-dropdown').empty().append('<option value="">-- Select Date --</option>');
+            $('#shift-dropdown').empty().append('<option value="">-- Select Shift --</option>');
+            $('#part-number-dropdown').empty().append('<option value="">-- Select Part Number --</option>');
+            $('#time-dropdown').empty().append('<option value="">-- Select Time --</option>');
+            $('#cycle-off-time-dropdown').empty().append('<option value="">-- Cycle Off Time --</option>');
+            // Reload dates to ensure fresh data
+            loadDates();
+        }
+
         $(document).ready(function () {
             fetchTableData();
-            loadDates(); // Load dates instead of part numbers initially
-            setInterval(fetchTableData, 3000);
+            loadDates();
+            setInterval(fetchTableData, 10000);
 
             $('#show-form-btn').on('click', function () {
                 $('#manual-entry-section').slideToggle(200);
             });
 
-            // Step 1: Date → Shifts
+            // Handle form submission with AJAX
+            $('#manual-entry-form').on('submit', function (e) {
+                e.preventDefault();
+                const $form = $(this);
+                const formData = $form.serialize();
+
+                $.ajax({
+                    url: $form.attr('action'),
+                    method: 'POST',
+                    data: formData,
+                    beforeSend: function () {
+                        $form.find('button[type="submit"]').prop('disabled', true).text('Submitting...');
+                    },
+                    success: function (response) {
+                        // Re‑enable button
+                        $form.find('button[type="submit"]')
+                             .prop('disabled', false)
+                             .text('Submit');
+                      
+                        // Show notification
+                        $("#notification")
+                          .text("Record submitted successfully")
+                          .addClass("success")
+                          .fadeIn(200)
+                          .delay(3000)
+                          .fadeOut(200);
+                      
+                        // Clear exactly these three selects:
+                        $('#time-dropdown').val('');                 // clears selected_time
+                        $('#cycle-off-time-dropdown').val('');       // clears cycle_off_time
+                        $('select[name="remarks_off_time"]').val(''); // clears remarks_off_time
+                        // ───────────────────────────────────────────────────────
+                      
+                        // Refresh the table
+                        fetchTableData();
+                      },
+                      
+                    error: function (xhr, status, error) {
+                        $form.find('button[type="submit"]').prop('disabled', false).text('Submit');
+                        const errorMsg = xhr.responseJSON?.error || 'Unknown error';
+                        $("#notification").text("Error submitting record: " + errorMsg).addClass("error").fadeIn(200).delay(3000).fadeOut(200);
+                        console.error('Submission error:', error);
+                    }
+                });
+            });
+
+            $(document).ready(function() {
+                $('#clear-filters-btn').on('click', function(e) {
+                e.preventDefault();
+
+                // 1) clear all the dynamic dropdowns:
+                $('#date-dropdown').val('');
+                $('#shift-dropdown').val('');
+                $('#part-number-dropdown').val('');
+
+                // 2) clear your time/off‑time/remarks selects:
+                $('#time-dropdown').val('');
+                $('#cycle-off-time-dropdown').val('');
+                $('select[name="remarks_off_time"]').val('');
+
+                // 3) clear all the production + new input fields:
+                $('#manual-entry-form')
+                    .find(
+                    'input[name="cycle_time"],' +
+                    'input[name="planned_qty"],' +
+                    'input[name="rejection_qty"],' +
+                    'input[name="paint_batch_no"],' +
+                    'input[name="thinner_batch_no"],' +
+                    'input[name="raw_paint_viscosity"],' +
+                    'input[name="paint_viscosity"],' +
+                    'input[name="seam_dft"],' +
+                    'input[name="mid_1_dft"],' +
+                    'input[name="mid_2_dft"],' +
+                    'input[name="upper_1_dft"],' +
+                    'input[name="upper_2_dft"],' +
+                    'input[name="dome_dft"]'
+                    )
+                    .val('');
+                });
+              });
+              
+            // Dropdown change handlers
             $('#date-dropdown').on('change', function () {
                 const selectedDate = $(this).val();
-                // Reset subsequent dropdowns
                 $('#shift-dropdown').empty().append('<option value="">-- Select Shift --</option>');
                 $('#part-number-dropdown').empty().append('<option value="">-- Select Part Number --</option>');
                 $('#time-dropdown').empty().append('<option value="">-- Select Time --</option>');
-                $('#cycle-off-time-dropdown').empty().append('<option value="">-- Select Cycle Off Time --</option>');
+                $('#cycle-off-time-dropdown').empty().append('<option value="">-- Cycle Off Time --</option>');
 
                 if (selectedDate) {
                     $.ajax({
@@ -247,19 +434,18 @@
                         },
                         error: function (xhr, status, error) {
                             console.error("Error fetching shifts:", error);
+                            $("#notification").text("Error fetching shifts").addClass("error").fadeIn(200).delay(3000).fadeOut(200);
                         }
                     });
                 }
             });
 
-            // Step 2: Shift → Part Numbers
             $('#shift-dropdown').on('change', function () {
                 const selectedDate = $('#date-dropdown').val();
                 const selectedShift = $(this).val();
-                // Reset subsequent dropdowns
                 $('#part-number-dropdown').empty().append('<option value="">-- Select Part Number --</option>');
                 $('#time-dropdown').empty().append('<option value="">-- Select Time --</option>');
-                $('#cycle-off-time-dropdown').empty().append('<option value="">-- Select Cycle Off Time --</option>');
+                $('#cycle-off-time-dropdown').empty().append('<option value="">-- Cycle Off Time --</option>');
 
                 if (selectedDate && selectedShift) {
                     $.ajax({
@@ -278,19 +464,18 @@
                         },
                         error: function (xhr, status, error) {
                             console.error("Error fetching part numbers:", error);
+                            $("#notification").text("Error fetching part numbers").addClass("error").fadeIn(200).delay(3000).fadeOut(200);
                         }
                     });
                 }
             });
 
-            // Step 3: Part Number → Times
             $('#part-number-dropdown').on('change', function () {
                 const selectedDate = $('#date-dropdown').val();
                 const selectedShift = $('#shift-dropdown').val();
                 const partNumber = $(this).val();
-                // Reset subsequent dropdowns
                 $('#time-dropdown').empty().append('<option value="">-- Select Time --</option>');
-                $('#cycle-off-time-dropdown').empty().append('<option value="">-- Select Cycle Off Time --</option>');
+                $('#cycle-off-time-dropdown').empty().append('<option value="">-- Cycle Off Time --</option>');
 
                 if (selectedDate && selectedShift && partNumber) {
                     $.ajax({
@@ -316,19 +501,18 @@
                         },
                         error: function (xhr, status, error) {
                             console.error("Error fetching times:", error);
+                            $("#notification").text("Error fetching times").addClass("error").fadeIn(200).delay(3000).fadeOut(200);
                         }
                     });
                 }
             });
 
-            // Step 4: Time → Cycle Off Times
             $('#time-dropdown').on('change', function () {
                 const selectedDate = $('#date-dropdown').val();
                 const selectedShift = $('#shift-dropdown').val();
                 const partNumber = $('#part-number-dropdown').val();
                 const selectedTime = $(this).val();
-                // Reset subsequent dropdown
-                $('#cycle-off-time-dropdown').empty().append('<option value="">-- Select Cycle Off Time --</option>');
+                $('#cycle-off-time-dropdown').empty().append('<option value="">-- Cycle Off Time --</option>');
 
                 if (selectedDate && selectedShift && partNumber && selectedTime) {
                     $.ajax({
@@ -352,6 +536,7 @@
                         error: function (xhr, status, error) {
                             console.error("Error fetching cycle off times:", error);
                             $('#cycle-off-time-dropdown').append('<option value="">Error Fetching Data</option>');
+                            $("#notification").text("Error fetching cycle off times").addClass("error").fadeIn(200).delay(3000).fadeOut(200);
                         }
                     });
                 }
