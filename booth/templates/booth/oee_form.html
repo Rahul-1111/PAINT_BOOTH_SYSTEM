@@ -109,9 +109,7 @@
                     </div>
                 </form>            
             </div>
-        </div>
-
-        <!-- OEE Records Table -->
+            <!-- OEE Records Table -->
         <div class="section" style="margin-top: 20px;">
             <h2>Records</h2>
             <div class="table-scroll-container">
@@ -128,15 +126,14 @@
                             <th>OK QTY</th>
                             <th>REJECTION QTY</th>
                             <th>TOTAL QTY</th>
-                            <th>SHIFT DOWN TIME</th>
                             <th>CYCLE OFF TIME</th>
                             <th>CYCLE ON TIME</th>
                             <th>REMARKS</th>
-                            <th>CONV TEMP 1</th>
+                            {% comment %} <th>CONV TEMP 1</th>
                             <th>CONV TEMP 2</th>
                             <th>CONV TEMP 3</th>
                             <th>COOL TEMP 1</th>
-                            <th>COOL TEMP 2</th>
+                            <th>COOL TEMP 2</th> {% endcomment %}
                             <th>PAINT BATCH</th>
                             <th>THINNER BATCH</th>
                             <th>RAW VISCOSITY</th>
@@ -155,6 +152,49 @@
                 </table>
             </div>
         </div>
+        </div>
+        <div class="section" style="margin-top: 20px;">
+            <h2>🔄 Latest Record (Live)</h2>
+            <div class="table-scroll-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SR</th>
+                            <th>DATE</th>
+                            <th>TIME</th>
+                            <th>SHIFT</th>
+                            <th>PART NUMBER</th>
+                            <th>CYCLE TIME</th>
+                            <th>PLANNED QTY</th>
+                            <th>OK QTY</th>
+                            <th>REJECTION QTY</th>
+                            <th>TOTAL QTY</th>
+                            <th>CYCLE OFF TIME</th>
+                            <th>CYCLE ON TIME</th>
+                            <th>REMARKS</th>
+                            <th>CONV TEMP 1</th>
+                            <th>CONV TEMP 2</th>
+                            <th>CONV TEMP 3</th>
+                            <th>COOL TEMP 1</th>
+                            <th>COOL TEMP 2</th>
+                            {% comment %} <th>PAINT BATCH</th>
+                            <th>THINNER BATCH</th>
+                            <th>RAW VISCOSITY</th>
+                            <th>PAINT VISCOSITY</th>
+                            <th>SEAM DFT</th>
+                            <th>MID 1 DFT</th>
+                            <th>MID 2 DFT</th>
+                            <th>UPPER 1 DFT</th>
+                            <th>UPPER 2 DFT</th>
+                            <th>DOME DFT</th> {% endcomment %}
+                        </tr>
+                    </thead>
+                    <tbody id="latest-live-row">
+                        <tr><td colspan="29">Loading latest data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>        
     </div>
 
     <footer>
@@ -194,15 +234,14 @@
                                     <td>${row.ok_production ?? ''}</td>
                                     <td>${row.rejection_qty ?? ''}</td>
                                     <td>${row.total_production ?? ''}</td>
-                                    <td>${row.shift_down_time ?? ''}</td>
                                     <td>${row.cycle_off_time ?? ''}</td>
                                     <td>${row.cycle_on_time ?? ''}</td>
                                     <td>${row.remarks_off_time ?? ''}</td>
-                                    <td>${row.convection_temp_1 ?? ''}</td>
+                                    {% comment %} <td>${row.convection_temp_1 ?? ''}</td>
                                     <td>${row.convection_temp_2 ?? ''}</td>
                                     <td>${row.convection_temp_3 ?? ''}</td>
                                     <td>${row.cooling_temp_1 ?? ''}</td>
-                                    <td>${row.cooling_temp_2 ?? ''}</td>
+                                    <td>${row.cooling_temp_2 ?? ''}</td> {% endcomment %}
                                     <td>${row.paint_batch_no ?? ''}</td>
                                     <td>${row.thinner_batch_no ?? ''}</td>
                                     <td>${row.raw_paint_viscosity ?? ''}</td>
@@ -223,6 +262,49 @@
                 }
             });
         }
+
+        function fetchLatestRecord() {
+            $.get("{% url 'booth:fetch_latest_record' %}", function(response) {
+                const data = response.data;
+                if (data) {
+                    $("#latest-live-row").html(`
+                        <tr>
+                            <td>1</td>
+                            <td>${data.date}</td>
+                            <td>${data.time}</td>
+                            <td>${data.shift}</td>
+                            <td>${data.part_number}</td>
+                            <td>${data.cycle_time || ''}</td>
+                            <td>${data.plan_production_qty || ''}</td>
+                            <td>${data.ok_production || ''}</td>
+                            <td>${data.rejection_qty || ''}</td>
+                            <td>${data.total_production || ''}</td>
+                            <td>${data.cycle_off_time || ''}</td>
+                            <td>${data.cycle_on_time || ''}</td>
+                            <td>${data.remarks_off_time || ''}</td>
+                            <td>${data.convection_temp_1 || ''}</td>
+                            <td>${data.convection_temp_2 || ''}</td>
+                            <td>${data.convection_temp_3 || ''}</td>
+                            <td>${data.cooling_temp_1 || ''}</td>
+                            <td>${data.cooling_temp_2 || ''}</td>
+                            {% comment %} <td>${data.paint_batch || ''}</td>
+                            <td>${data.thinner_batch || ''}</td>
+                            <td>${data.raw_viscosity || ''}</td>
+                            <td>${data.paint_viscosity || ''}</td>
+                            <td>${data.seam_dft || ''}</td>
+                            <td>${data.mid_1_dft || ''}</td>
+                            <td>${data.mid_2_dft || ''}</td>
+                            <td>${data.upper_1_dft || ''}</td>
+                            <td>${data.upper_2_dft || ''}</td>
+                            <td>${data.dome_dft || ''}</td> {% endcomment %}
+                        </tr>
+                    `);
+                }
+            });
+        }
+        
+        setInterval(fetchLatestRecord, 1000);
+        fetchLatestRecord();        
     
         function loadDates() {
             $.ajax({

@@ -7,7 +7,7 @@ class OEEDashboardAdmin(admin.ModelAdmin):
         'id', 'date', 'time', 'shift',
         'part_number', 'cycle_time', 'plan_production_qty',
         'rejection_qty', 'ok_production', 'total_production',
-        'shift_down_time', 'cycle_off_time', 'cycle_on_time',
+        'cycle_off_time', 'cycle_on_time',
         'remarks_off_time', 'paint_batch_no', 'thinner_batch_no',
         'raw_paint_viscosity', 'paint_viscosity',
         'seam_dft', 'mid_1_dft', 'mid_2_dft',
@@ -33,8 +33,7 @@ class OEEDashboardAdmin(admin.ModelAdmin):
         }),
         ('Downtime & Cycle Timing', {
             'fields': (
-                'shift_down_time', 'cycle_off_time',
-                'cycle_on_time', 'remarks_off_time'
+                'cycle_off_time', 'cycle_on_time', 'remarks_off_time'
             )
         }),
         ('Paint Quality Data', {
@@ -53,4 +52,4 @@ class OEEDashboardAdmin(admin.ModelAdmin):
         }),
     )
 
-    readonly_fields = ('date', 'time', 'total_production', 'shift_down_time')
+    readonly_fields = ('date', 'time', 'total_production')

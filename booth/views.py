@@ -102,16 +102,14 @@ def fetch_torque_data(request):
             'rejection_qty': d.rejection_qty,
             'ok_production': d.ok_production,
             'total_production': d.total_production,
-            'shift_down_time': d.shift_down_time,
             'cycle_off_time': d.cycle_off_time,
             'cycle_on_time': d.cycle_on_time,
             'remarks_off_time': d.remarks_off_time,
-            'convection_temp_1': d.convection_temp_1,
-            'convection_temp_2': d.convection_temp_2,
-            'convection_temp_3': d.convection_temp_3,
-            'cooling_temp_1': d.cooling_temp_1,
-            'cooling_temp_2': d.cooling_temp_2,
-            # Manual fields
+            # 'convection_temp_1': d.convection_temp_1,
+            # 'convection_temp_2': d.convection_temp_2,
+            # 'convection_temp_3': d.convection_temp_3,
+            # 'cooling_temp_1': d.cooling_temp_1,
+            # 'cooling_temp_2': d.cooling_temp_2,
             'paint_batch_no': d.paint_batch_no,
             'thinner_batch_no': d.thinner_batch_no,
             'raw_paint_viscosity': d.raw_paint_viscosity,
@@ -126,6 +124,45 @@ def fetch_torque_data(request):
         for d in data
     ]
     return JsonResponse({'data': json_data})
+
+from django.views.decorators.http import require_GET
+
+@require_GET
+def fetch_latest_record(request):
+    latest = OEEDashboardData.objects.last()
+    if not latest:
+        return JsonResponse({'data': None})
+
+    data = {
+        'date': str(latest.date),
+        'time': latest.time.strftime('%H:%M:%S'),
+        'shift': latest.shift,
+        'part_number': latest.part_number,
+        'cycle_time': latest.cycle_time,
+        'plan_production_qty': latest.plan_production_qty,
+        'rejection_qty': latest.rejection_qty,
+        'ok_production': latest.ok_production,
+        'total_production': latest.total_production,
+        'cycle_off_time': latest.cycle_off_time,
+        'cycle_on_time': latest.cycle_on_time,
+        'remarks_off_time': latest.remarks_off_time,
+        'convection_temp_1': latest.convection_temp_1,
+        'convection_temp_2': latest.convection_temp_2,
+        'convection_temp_3': latest.convection_temp_3,
+        'cooling_temp_1': latest.cooling_temp_1,
+        'cooling_temp_2': latest.cooling_temp_2,
+        # 'paint_batch': latest.paint_batch_no,
+        # 'thinner_batch': latest.thinner_batch_no,
+        # 'raw_viscosity': latest.raw_paint_viscosity,
+        # 'paint_viscosity': latest.paint_viscosity,
+        # 'seam_dft': latest.seam_dft,
+        # 'mid_1_dft': latest.mid_1_dft,
+        # 'mid_2_dft': latest.mid_2_dft,
+        # 'upper_1_dft': latest.upper_1_dft,
+        # 'upper_2_dft': latest.upper_2_dft,
+        # 'dome_dft': latest.dome_dft,
+    }
+    return JsonResponse({'data': data})
 
 # OEE Calculation Logic
 def calculate_oee(record):

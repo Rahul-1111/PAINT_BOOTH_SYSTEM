@@ -25,7 +25,6 @@ class OEEDashboardData(models.Model):
 
     # Calculated in Software
     total_production = models.IntegerField(editable=False)
-    shift_down_time = models.FloatField(editable=False, help_text="Per shift down time in seconds")
 
     # Remarks (Dropdown/User Input)
     remarks_off_time = models.CharField(
@@ -47,7 +46,6 @@ class OEEDashboardData(models.Model):
 
     def save(self, *args, **kwargs):
         self.total_production = self.ok_production + self.rejection_qty
-        self.shift_down_time = self.cycle_off_time  # You can enhance this logic further
         super().save(*args, **kwargs)
 
     def __str__(self):

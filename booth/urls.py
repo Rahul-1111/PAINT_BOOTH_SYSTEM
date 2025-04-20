@@ -11,5 +11,5 @@ urlpatterns = [
     path("manual-entry/", views.manual_entry_view, name="manual_entry"),
     path('recipe-input/', views.recipe_input_view, name='input_recipe'),
     path("get-filters/", views.get_filters_for_part, name="get_filters_for_part"),
-
+    path('fetch-latest-record/', views.fetch_latest_record, name='fetch_latest_record'),
 ]
