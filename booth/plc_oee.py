@@ -49,25 +49,18 @@ async def toggle_heartbeat():
 def monitor_signals():
     while True:
         try:
-            # 🔄 Check manual triggers: D5108 = ON, D5109 = OFF
             on_signal = plc.batchread_wordunits('D5108', 1)[0]
             off_signal = plc.batchread_wordunits('D5109', 1)[0]
 
             if on_signal == 1:
-                # Store data when D5108 is ON
                 on_time = plc.batchread_wordunits('D5104', 1)[0]
                 store_oee_data(cycle_on_time=on_time)
-                
-                # Reset the signal to 0 after storing data
                 plc.batchwrite_wordunits('D5108', [0])
                 print("✅ D5108 reset to 0 after storing data")
 
             if off_signal == 1:
-                # Store data when D5109 is ON
                 off_time = plc.batchread_wordunits('D5106', 1)[0]
                 store_oee_data(cycle_off_time=off_time)
-
-                # Reset the signal to 0 after storing data
                 plc.batchwrite_wordunits('D5109', [0])
                 print("✅ D5109 reset to 0 after storing data")
 
@@ -78,22 +71,23 @@ def monitor_signals():
             time.sleep(3)
             connect_plc()
 
+def read_temperature_values():
+    global last_temps
+    try:
+        raw = plc.batchread_wordunits('D5112', 9)
+        return [raw[0], raw[2], raw[4], raw[6], raw[8]]
+    except Exception as e:
+        print(f"[Temp Read Error] {e}")
+        return last_temps  # 🛟 Fallback to last known values
+
 def store_oee_data(cycle_on_time=None, cycle_off_time=None):
     global last_entered_part_number
     try:
-        values = plc.batchread_wordunits('D5102', 1)  # OK production
-
-        # 🌡️ Read temperature zones
-        temps = [
-            plc.batchread_wordunits('D5112', 1)[0],  # Convection 1
-            plc.batchread_wordunits('D5114', 1)[0],  # Convection 2
-            plc.batchread_wordunits('D5116', 1)[0],  # Convection 3
-            plc.batchread_wordunits('D5118', 1)[0],  # Cooling 1
-            plc.batchread_wordunits('D5120', 1)[0],  # Cooling 2
-        ]
+        values = plc.batchread_wordunits('D5102', 1)
+        temps = read_temperature_values()
 
         data = OEEDashboardData(
-            part_number=last_entered_part_number or " ",  # 🔁 Reuse last entered part
+            part_number=last_entered_part_number or " ",
             cycle_time=0.0,
             plan_production_qty=0,
             rejection_qty=0,
@@ -112,20 +106,14 @@ def store_oee_data(cycle_on_time=None, cycle_off_time=None):
     except Exception as e:
         print(f"[DB Save Error] {e}")
 
-last_temps = [None, None, None, None, None]  # For detecting temperature changes
+last_temps = [None, None, None, None, None]
 def monitor_temperature_changes():
     global last_temps
     while True:
         try:
-            temps = [
-                plc.batchread_wordunits('D5112', 1)[0],  # Convection 1
-                plc.batchread_wordunits('D5114', 1)[0],  # Convection 2
-                plc.batchread_wordunits('D5116', 1)[0],  # Convection 3
-                plc.batchread_wordunits('D5118', 1)[0],  # Cooling 1
-                plc.batchread_wordunits('D5120', 1)[0],  # Cooling 2
-            ]
+            temps = read_temperature_values()
 
-            if temps != last_temps:
+            if temps != last_temps and any(temps):  # ← ✅ Prevent saving all-zeros
                 last_temps = temps.copy()
 
                 data = OEEDashboardData(
@@ -133,7 +121,7 @@ def monitor_temperature_changes():
                     cycle_time=0.0,
                     plan_production_qty=0,
                     rejection_qty=0,
-                    ok_production=0,  # You can change this if needed
+                    ok_production=0,
                     cycle_on_time=0.0,
                     cycle_off_time=0.0,
                     convection_temp_1=temps[0],
@@ -145,9 +133,9 @@ def monitor_temperature_changes():
                 data.save()
                 print(f"🌡️ Temp changed → saved: {temps}")
             else:
-                print("✅ Temps same, no save")
+                print("✅ Temps same or all-zero, no save")
 
-            time.sleep(2)  # Check every 2 seconds — adjust if needed
+            time.sleep(2)
 
         except Exception as e:
             print(f"[Temp Monitor Error] {e}")
@@ -173,17 +161,9 @@ def initialize_last_part_number():
 def run():
     print("🚀 Starting PLC monitor...")
 
-    # 🔁 Load last part number from DB on startup
     initialize_last_part_number()
-    
     connect_plc()
 
-    # Start heartbeat
     threading.Thread(target=start_async_loop, daemon=True).start()
-
-    # Start signal monitor
     threading.Thread(target=monitor_signals, daemon=True).start()
-
-    # Start background temperature monitor
     threading.Thread(target=monitor_temperature_changes, daemon=True).start()
-
