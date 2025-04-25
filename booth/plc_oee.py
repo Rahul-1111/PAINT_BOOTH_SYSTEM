@@ -112,6 +112,47 @@ def store_oee_data(cycle_on_time=None, cycle_off_time=None):
     except Exception as e:
         print(f"[DB Save Error] {e}")
 
+last_temps = [None, None, None, None, None]  # For detecting temperature changes
+def monitor_temperature_changes():
+    global last_temps
+    while True:
+        try:
+            temps = [
+                plc.batchread_wordunits('D5112', 1)[0],  # Convection 1
+                plc.batchread_wordunits('D5114', 1)[0],  # Convection 2
+                plc.batchread_wordunits('D5116', 1)[0],  # Convection 3
+                plc.batchread_wordunits('D5118', 1)[0],  # Cooling 1
+                plc.batchread_wordunits('D5120', 1)[0],  # Cooling 2
+            ]
+
+            if temps != last_temps:
+                last_temps = temps.copy()
+
+                data = OEEDashboardData(
+                    part_number=last_entered_part_number or " ",
+                    cycle_time=0.0,
+                    plan_production_qty=0,
+                    rejection_qty=0,
+                    ok_production=0,  # You can change this if needed
+                    cycle_on_time=0.0,
+                    cycle_off_time=0.0,
+                    convection_temp_1=temps[0],
+                    convection_temp_2=temps[1],
+                    convection_temp_3=temps[2],
+                    cooling_temp_1=temps[3],
+                    cooling_temp_2=temps[4],
+                )
+                data.save()
+                print(f"🌡️ Temp changed → saved: {temps}")
+            else:
+                print("✅ Temps same, no save")
+
+            time.sleep(2)  # Check every 2 seconds — adjust if needed
+
+        except Exception as e:
+            print(f"[Temp Monitor Error] {e}")
+            time.sleep(5)
+
 def start_async_loop():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -142,3 +183,7 @@ def run():
 
     # Start signal monitor
     threading.Thread(target=monitor_signals, daemon=True).start()
+
+    # Start background temperature monitor
+    threading.Thread(target=monitor_temperature_changes, daemon=True).start()
+

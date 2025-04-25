@@ -374,12 +374,10 @@
                           .fadeOut(200);
                       
                         // Clear exactly these three selects:
-                        $('#time-dropdown').val('');                 // clears selected_time
-                        $('#cycle-off-time-dropdown').val('');       // clears cycle_off_time
-                        $('select[name="remarks_off_time"]').val(''); // clears remarks_off_time
-                        // ───────────────────────────────────────────────────────
+                        $('#time-dropdown').val('');                
+                        $('#cycle-off-time-dropdown').val('');       
+                        $('select[name="remarks_off_time"]').val(''); 
                       
-                        // Refresh the table
                         fetchTableData();
                       },
                       
@@ -396,17 +394,14 @@
                 $('#clear-filters-btn').on('click', function(e) {
                 e.preventDefault();
 
-                // 1) clear all the dynamic dropdowns:
                 $('#date-dropdown').val('');
                 $('#shift-dropdown').val('');
                 $('#part-number-dropdown').val('');
 
-                // 2) clear your time/off‑time/remarks selects:
                 $('#time-dropdown').val('');
                 $('#cycle-off-time-dropdown').val('');
                 $('select[name="remarks_off_time"]').val('');
 
-                // 3) clear all the production + new input fields:
                 $('#manual-entry-form')
                     .find(
                     'input[name="cycle_time"],' +
