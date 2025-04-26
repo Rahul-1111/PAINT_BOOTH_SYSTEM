@@ -9,12 +9,12 @@ class OEEDashboardData(models.Model):
 
     # Input from User
     part_number = models.CharField(max_length=100, help_text="Part Number (Recipe)")
-    cycle_time = models.FloatField(help_text="Cycle time for part (in seconds)")
-    plan_production_qty = models.IntegerField()
-    rejection_qty = models.IntegerField()
+    cycle_time = models.FloatField(help_text="Cycle time for part (in seconds)",blank=True, null=True)
+    plan_production_qty = models.IntegerField(blank=True, null=True)
+    rejection_qty = models.IntegerField(blank=True, null=True)
 
     # From PLC
-    ok_production = models.IntegerField()
+    ok_production = models.IntegerField(editable=False,blank=True, null=True)
     cycle_off_time = models.FloatField(help_text="Cycle OFF Time (seconds)")
     cycle_on_time = models.FloatField(help_text="Cycle ON Time (seconds)")
     convection_temp_1 = models.FloatField(help_text="Convection zone 1 Temp")
@@ -24,7 +24,7 @@ class OEEDashboardData(models.Model):
     cooling_temp_2 = models.FloatField(help_text="Cooling zone 2 Temp")
 
     # Calculated in Software
-    total_production = models.IntegerField(editable=False)
+    total_production = models.IntegerField()
 
     # Remarks (Dropdown/User Input)
     remarks_off_time = models.CharField(
@@ -45,7 +45,7 @@ class OEEDashboardData(models.Model):
     dome_dft = models.IntegerField(blank=True, null=True)  # Integer
 
     def save(self, *args, **kwargs):
-        self.total_production = self.ok_production + self.rejection_qty
+        self.ok_production = self.total_production - self.rejection_qty
         super().save(*args, **kwargs)
 
     def __str__(self):

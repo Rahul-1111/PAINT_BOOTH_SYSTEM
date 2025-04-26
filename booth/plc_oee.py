@@ -91,7 +91,8 @@ def store_oee_data(cycle_on_time=None, cycle_off_time=None):
             cycle_time=0.0,
             plan_production_qty=0,
             rejection_qty=0,
-            ok_production=int(values[0]),
+            ok_production=0,
+            total_production=int(values[0]),
             cycle_on_time=cycle_on_time or 0.0,
             cycle_off_time=cycle_off_time or 0.0,
             convection_temp_1=temps[0],
@@ -111,6 +112,7 @@ def monitor_temperature_changes():
     global last_temps
     while True:
         try:
+            values = plc.batchread_wordunits('D5102', 1)
             temps = read_temperature_values()
 
             if temps != last_temps and any(temps):  # ← ✅ Prevent saving all-zeros
@@ -122,6 +124,7 @@ def monitor_temperature_changes():
                     plan_production_qty=0,
                     rejection_qty=0,
                     ok_production=0,
+                    total_production=int(values[0]),
                     cycle_on_time=0.0,
                     cycle_off_time=0.0,
                     convection_temp_1=temps[0],

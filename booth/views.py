@@ -168,11 +168,13 @@ def fetch_latest_record(request):
 def calculate_oee(record):
     try:
         total_time = get_float(record.cycle_on_time) + get_float(record.cycle_off_time)
-        total_production = get_int(record.ok_production) + get_int(record.rejection_qty)
+        total_production = get_int(record.total_production)
+        rejection_qty = get_int(record.rejection_qty)
+        ok_production = total_production - rejection_qty
 
         availability = (get_float(record.cycle_on_time) / total_time) * 100 if total_time else 0
-        performance = (get_int(record.ok_production) * get_float(record.cycle_time) / get_float(record.cycle_on_time)) * 100 if get_float(record.cycle_on_time) else 0
-        quality = (get_int(record.ok_production) / total_production) * 100 if total_production else 0
+        performance = (ok_production * get_float(record.cycle_time) / get_float(record.cycle_on_time)) * 100 if get_float(record.cycle_on_time) else 0
+        quality = (ok_production / total_production) * 100 if total_production else 0
 
         oee = (availability * performance * quality) / 10000
 
@@ -182,7 +184,8 @@ def calculate_oee(record):
             "quality": round(quality, 2),
             "oee": round(oee, 2)
         }
-    except Exception:
+    except Exception as e:
+        print(f"Error in calculate_oee: {e}")
         return {
             "availability": 0,
             "performance": 0,
@@ -197,10 +200,16 @@ def edit_oee_record(request, pk):
     if request.method == "POST":
         data = request.POST
         try:
+            rejection_qty = get_int(data.get('rejection_qty'))
+            total_production = get_int(data.get('total_production'))
+            ok_production = total_production - rejection_qty
+
             record.part_number = data.get('part_number')
             record.cycle_time = get_float(data.get('cycle_time'))
             record.plan_production_qty = get_int(data.get('planned_qty'))
-            record.rejection_qty = get_int(data.get('rejection_qty'))
+            record.rejection_qty = rejection_qty
+            record.total_production = total_production
+            record.ok_production = ok_production
             record.remarks_off_time = data.get('remarks_off_time')
             record.cycle_on_time = get_float(data.get('cycle_on_time'))
             record.cycle_off_time = get_float(data.get('cycle_off_time'))
@@ -212,7 +221,6 @@ def edit_oee_record(request, pk):
             return render(request, "booth/oee_form_edit.html", {"error": "Invalid input", "record": record})
 
     return render(request, "booth/oee_form_edit.html", {"record": record})
-
 # Get list of distinct part numbers
 def get_part_numbers(request):
     part_numbers = OEEDashboardData.objects.values_list('part_number', flat=True).distinct()

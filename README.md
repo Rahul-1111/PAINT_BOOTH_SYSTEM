@@ -11,3 +11,5 @@ python manage.py createsuperuser
 python manage.py collectstatic
 daphne Paint_booth.asgi:application
 
+git push origin main
+
