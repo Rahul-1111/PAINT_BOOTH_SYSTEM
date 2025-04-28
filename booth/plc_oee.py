@@ -10,6 +10,17 @@ plc_port = 502
 plc = pymcprotocol.Type3E()
 
 last_entered_part_number = None  # 🔁 Store last entered part (in Python only)
+last_temps = [None, None, None, None, None]
+
+# 📍 Shift logic
+def get_current_shift():
+    now = datetime.now().time()
+    if now >= datetime.strptime('06:00:00', '%H:%M:%S').time() and now < datetime.strptime('14:00:00', '%H:%M:%S').time():
+        return 'Shift 1'  # Morning Shift
+    elif now >= datetime.strptime('14:00:00', '%H:%M:%S').time() and now < datetime.strptime('22:00:00', '%H:%M:%S').time():
+        return 'Shift 2' # Afternoon Shift
+    else:
+        return 'Shift 3'  # Night Shift
 
 # ✅ Called from view or API when user enters new part
 def handle_recipe_change_with_input(part_number):
@@ -87,6 +98,7 @@ def store_oee_data(cycle_on_time=None, cycle_off_time=None):
         temps = read_temperature_values()
 
         data = OEEDashboardData(
+            shift=get_current_shift(),
             part_number=last_entered_part_number or " ",
             cycle_time=0.0,
             plan_production_qty=0,
@@ -102,12 +114,11 @@ def store_oee_data(cycle_on_time=None, cycle_off_time=None):
             cooling_temp_2=temps[4],
         )
         data.save()
-        print(f"📥 OEE Data Saved for Part: {data.part_number}")
+        print(f"📥 OEE Data Saved for Part: {data.part_number}, Shift: {data.shift}")
 
     except Exception as e:
         print(f"[DB Save Error] {e}")
 
-last_temps = [None, None, None, None, None]
 def monitor_temperature_changes():
     global last_temps
     while True:
@@ -119,6 +130,7 @@ def monitor_temperature_changes():
                 last_temps = temps.copy()
 
                 data = OEEDashboardData(
+                    shift=get_current_shift(),
                     part_number=last_entered_part_number or " ",
                     cycle_time=0.0,
                     plan_production_qty=0,
@@ -134,7 +146,7 @@ def monitor_temperature_changes():
                     cooling_temp_2=temps[4],
                 )
                 data.save()
-                print(f"🌡️ Temp changed → saved: {temps}")
+                print(f"🌡️ Temp changed → saved: {temps}, Shift: {data.shift}")
             else:
                 print("✅ Temps same or all-zero, no save")
 

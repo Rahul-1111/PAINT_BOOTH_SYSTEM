@@ -20,7 +20,6 @@ def get_int(value):
     except (ValueError, TypeError):
         return 0
 
-# Dashboard form view
 def dashboard_form_view(request):
     last_part = request.session.get('last_part_number', '')
 
@@ -28,16 +27,8 @@ def dashboard_form_view(request):
         data = request.POST
         now = timezone.now()
 
-        # Determine shift
-        hour = now.hour
-        if 6 <= hour < 14:
-            shift = "Shift 1"
-        elif 14 <= hour < 22:
-            shift = "Shift 2"
-        else:
-            shift = "Shift 3"
-
         part_number = data.get('part_number')
+        shift = data.get('shift')  # <<< directly use posted shift
 
         try:
             existing = OEEDashboardData.objects.filter(
@@ -59,7 +50,7 @@ def dashboard_form_view(request):
                 OEEDashboardData.objects.create(
                     date=now.date(),
                     time=now.time(),
-                    shift=shift,
+                    shift=shift,  # <<< use posted shift
                     part_number=part_number,
                     cycle_time=get_float(data.get('cycle_time')),
                     plan_production_qty=get_int(data.get('planned_qty')),

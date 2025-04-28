@@ -52,4 +52,4 @@ class OEEDashboardAdmin(admin.ModelAdmin):
         }),
     )
 
-    readonly_fields = ('date', 'time', 'total_production')
+    readonly_fields = ('date', 'time', 'ok_production')
