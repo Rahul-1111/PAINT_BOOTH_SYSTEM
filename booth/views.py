@@ -81,7 +81,7 @@ def dashboard_form_view(request):
     })
 
 def fetch_torque_data(request):
-    data = OEEDashboardData.objects.all().order_by('-id')[:50]  # or any limit you want
+    data = OEEDashboardData.objects.all().order_by('-id')
     json_data = [
         {
             'date': str(d.date),
