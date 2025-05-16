@@ -52,12 +52,12 @@
                             <option value="">-- Select Part Number --</option>
                         </select> 
 
-                        <!-- Production Fields -->
-                        <input type="number" name="cycle_time" placeholder="Cycle Time (s)" step="0.01" min="0" required>
-                        <input type="number" name="planned_qty" placeholder="Planned Qty" min="0" required>
-                        <input type="number" name="rejection_qty" placeholder="Rejection Qty" min="0" required>
+                        <!-- Production Fields (Now Optional) -->
+                        <input type="number" name="cycle_time" placeholder="Cycle Time (s)" step="0.01" min="0">
+                        <input type="number" name="planned_qty" placeholder="Planned Qty" min="0">
+                        <input type="number" name="rejection_qty" placeholder="Rejection Qty" min="0">
 
-                        <!-- New Fields -->
+                        <!-- New Fields (Already Optional or Made Optional) -->
                         <input type="text" name="paint_batch_no" placeholder="Paint Batch No.">
                         <input type="text" name="thinner_batch_no" placeholder="Thinner Batch No.">
                         <input type="number" name="raw_paint_viscosity" step="0.01" min="0" placeholder="Raw Paint Viscosity (Seconds)">
@@ -77,13 +77,18 @@
                             <option value="">-- Cycle Off Time --</option>
                         </select>
 
-                        <!-- Remarks -->
-                        <select name="remarks_off_time" required>
+                        <!-- Remarks (Now Optional) -->
+                        <select name="remarks_off_time">
                             <option value="">-- Remarks --</option>
                             <option value="Maintenance">Maintenance</option>
                             <option value="Material Shortage">Material Shortage</option>
                             <option value="Power Failure">Power Failure</option>
                             <option value="Lunch Break">Lunch Break</option>
+                            <option value="Set up time">Set up time</option>
+                            <option value="Air cap cleaning">Air cap cleaning</option>
+                            <option value="Tea time">Tea time</option>
+                            <option value="CCS Seaming machine break down">CCS Seaming machine break down</option>
+                            <option value="Loctite machine break down">Loctite machine break down</option>
                             <option value="Other">Other</option>
                         </select>
 
@@ -93,6 +98,7 @@
                     </div>
                 </form>            
             </div>
+        </div>
             <!-- OEE Records Table -->
         <div class="section" style="margin-top: 20px;">
             <h2>Records</h2>
@@ -111,7 +117,7 @@
                             <th>REJECTION QTY</th>
                             <th>TOTAL QTY</th>
                             <th>CYCLE OFF TIME</th>
-                            <th>CYCLE ON TIME</th>
+                            {% comment %} <th>CYCLE ON TIME</th> {% endcomment %}
                             <th>REMARKS</th>
                             {% comment %} <th>CONV TEMP 1</th>
                             <th>CONV TEMP 2</th>
@@ -219,13 +225,7 @@
                                     <td>${row.rejection_qty ?? ''}</td>
                                     <td>${row.total_production ?? ''}</td>
                                     <td>${row.cycle_off_time ?? ''}</td>
-                                    <td>${row.cycle_on_time ?? ''}</td>
                                     <td>${row.remarks_off_time ?? ''}</td>
-                                    {% comment %} <td>${row.convection_temp_1 ?? ''}</td>
-                                    <td>${row.convection_temp_2 ?? ''}</td>
-                                    <td>${row.convection_temp_3 ?? ''}</td>
-                                    <td>${row.cooling_temp_1 ?? ''}</td>
-                                    <td>${row.cooling_temp_2 ?? ''}</td> {% endcomment %}
                                     <td>${row.paint_batch_no ?? ''}</td>
                                     <td>${row.thinner_batch_no ?? ''}</td>
                                     <td>${row.raw_paint_viscosity ?? ''}</td>
@@ -271,16 +271,6 @@
                             <td>${data.convection_temp_3 || ''}</td>
                             <td>${data.cooling_temp_1 || ''}</td>
                             <td>${data.cooling_temp_2 || ''}</td>
-                            {% comment %} <td>${data.paint_batch || ''}</td>
-                            <td>${data.thinner_batch || ''}</td>
-                            <td>${data.raw_viscosity || ''}</td>
-                            <td>${data.paint_viscosity || ''}</td>
-                            <td>${data.seam_dft || ''}</td>
-                            <td>${data.mid_1_dft || ''}</td>
-                            <td>${data.mid_2_dft || ''}</td>
-                            <td>${data.upper_1_dft || ''}</td>
-                            <td>${data.upper_2_dft || ''}</td>
-                            <td>${data.dome_dft || ''}</td> {% endcomment %}
                         </tr>
                     `);
                 }
@@ -381,7 +371,6 @@
                 $('#date-dropdown').val('');
                 $('#shift-dropdown').val('');
                 $('#part-number-dropdown').val('');
-
                 $('#time-dropdown').val('');
                 $('#cycle-off-time-dropdown').val('');
                 $('select[name="remarks_off_time"]').val('');

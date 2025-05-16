@@ -83,6 +83,9 @@ header {
 footer {
     padding: 2px 0; /* Reduced height */
     font-size: 13px; /* Smaller text */
+    text-align: center;
+    background-color: #007BFF;
+    color: white;
 }
 
 .content {
