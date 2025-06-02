@@ -81,6 +81,27 @@ DATABASES = {
     }
 }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'pok_db',  # Name of the database you created
+#         'USER': 'postgres',     # Your PostgreSQL username
+#         'PASSWORD': '12345687',  # Your PostgreSQL password
+#         'HOST': 'localhost',  # Or use '127.0.0.1'
+#         'PORT': '5432',       # Default PostgreSQL port
+#     }
+# }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('DB_NAME', 'OEEqmPb'),
+#         'USER': os.getenv('DB_USER', 'OeePaintBooth'),
+#         'PASSWORD': os.getenv('DB_PASSWORD'),
+#         'HOST': os.getenv('DB_HOST', '192.168.101.11'),
+#         'PORT': os.getenv('DB_PORT', '5432'),
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
